@@ -65,21 +65,6 @@
         android:fillColor="#CCCCCC"
         android:pathData="M36,32c-1.1,0 -2,-0.9 -2,-2s0.9,-2 2,-2s2,0.9 2,2S37.1,32 36,32z"/>
 
-    <!-- GPS Signal Waves -->
-    <path
-        android:fillColor="#4CAF50"
-        android:strokeWidth="1.5"
-        android:strokeColor="#4CAF50"
-        android:fillType="nonZero"
-        android:pathData="M75,20c0,2 -1,4 -2,5l2,2c2,-2 3,-5 3,-7s-1,-5 -3,-7l-2,2C74,16 75,18 75,20z"/>
-
-    <path
-        android:fillColor="#4CAF50"
-        android:strokeWidth="1.5"
-        android:strokeColor="#4CAF50"
-        android:fillType="nonZero"
-        android:pathData="M81,20c0,4 -2,8 -4,11l2,2c3,-4 5,-8 5,-13s-2,-9 -5,-13l-2,2C79,12 81,16 81,20z"/>
-
     <!-- GPS Coordinate Text -->
     <path
         android:fillColor="#4CAF50"

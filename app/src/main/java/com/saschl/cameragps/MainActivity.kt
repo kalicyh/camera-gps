@@ -4,18 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.saschl.cameragps.service.FileTree
 import com.saschl.cameragps.service.GlobalExceptionHandler
 import com.saschl.cameragps.ui.theme.CameraGpsTheme
-import com.saschl.cameragps.service.CompanionDeviceManagerSample
+import com.saschl.cameragps.service.CameraDeviceManager
 import timber.log.Timber
 
 class MainActivity : ComponentActivity() {
@@ -36,7 +29,7 @@ class MainActivity : ComponentActivity() {
         Timber.i("created MainActivity")
         setContent {
             CameraGpsTheme {
-                CompanionDeviceManagerSample()
+                CameraDeviceManager()
             }
         }
     }

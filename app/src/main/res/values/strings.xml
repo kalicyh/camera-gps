@@ -16,4 +16,5 @@
     <string name="step2_android10_warning">You\'ll need to select "Allow all the time" in the next dialog</string>
     <string name="step2_grant">Grant Background Location</string>
     <string name="step2_granted">&#10003; Granted</string>
+    <string name="view_logs">View logs</string>
 </resources>

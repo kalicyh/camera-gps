@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Camera Body - circular design for round icon -->
+    <path
+        android:fillColor="#E8E8E8"
+        android:pathData="M54,54m-35,0a35,35 0,1 1,70 0a35,35 0,1 1,-70 0"/>
+
+    <!-- Camera Lens Outer Ring -->
+    <path
+        android:fillColor="#2C2C2C"
+        android:pathData="M54,35c-10.49,0 -19,8.51 -19,19s8.51,19 19,19s19,-8.51 19,-19S64.49,35 54,35z"/>
+
+    <!-- Camera Lens Middle Ring -->
+    <path
+        android:fillColor="#404040"
+        android:pathData="M54,40c-7.73,0 -14,6.27 -14,14s6.27,14 14,14s14,-6.27 14,-14S61.73,40 54,40z"/>
+
+    <!-- Camera Lens Inner -->
+    <path
+        android:fillColor="#1A1A1A"
+        android:pathData="M54,45c-4.97,0 -9,4.03 -9,9s4.03,9 9,9s9,-4.03 9,-9S58.97,45 54,45z"/>
+
+    <!-- GPS Compass Rose Background -->
+    <path
+        android:fillColor="#333333"
+        android:pathData="M54,49c-2.76,0 -5,2.24 -5,5s2.24,5 5,5s5,-2.24 5,-5S56.76,49 54,49z"/>
+
+    <!-- GPS Compass Center -->
+    <path
+        android:fillColor="#FF4444"
+        android:pathData="M54,52c-1.1,0 -2,0.9 -2,2s0.9,2 2,2s2,-0.9 2,-2S55.1,52 54,52z"/>
+
+    <!-- North Needle (Red) - pointing up -->
+    <path
+        android:fillColor="#FF4444"
+        android:pathData="M54,47l-1.5,4h3L54,47z"/>
+
+    <!-- South Needle (White) - pointing down -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,61l-1.5,-4h3L54,61z"/>
+
+    <!-- East Needle (Light Gray) -->
+    <path
+        android:fillColor="#CCCCCC"
+        android:pathData="M61,54l-4,-1.5v3L61,54z"/>
+
+    <!-- West Needle (Light Gray) -->
+    <path
+        android:fillColor="#CCCCCC"
+        android:pathData="M47,54l4,-1.5v3L47,54z"/>
+
+
+
+
+
+</vector>
