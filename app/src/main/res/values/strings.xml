@@ -2,4 +2,18 @@
     <string name="app_name">CameraGps</string>
     <string name="foreground_service_notification">Transmitting location data to camera</string>
     <string name="scan_for_devices">Click to find &amp; associate your camera</string>
+    <string name="permission_gps">Access precise location</string>
+    <string name="permission_background_gps">Allow location access when the app is in the background</string>
+    <string name="permission_bluetooth">Allow the app to establish bluetooth connections</string>
+    <string name="permission_notifications">Allow the app to post notifications</string>
+    <string name="step1_title">Step 1: Location &amp; Bluetooth Access</string>
+    <string name="step1_desc">Required for connecting to your Sony camera and accessing location data.</string>
+    <string name="step1_missing">Missing permissions:</string>
+    <string name="step1_grant">Grant Location &amp; Bluetooth Access</string>
+    <string name="step1_granted">&#10003; Granted</string>
+    <string name="step2_title">Step 2: Background Location Access</string>
+    <string name="step2_desc">Allows continuous GPS sync to your camera even when the app is in the background or screen is off.</string>
+    <string name="step2_android10_warning">⚠️ On Android 10+, you'll need to select "Allow all the time" in the next dialog</string>
+    <string name="step2_grant">Grant Background Location</string>
+    <string name="step2_granted">&#10003; Granted</string>
 </resources>

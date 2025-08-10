@@ -50,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
@@ -68,6 +69,7 @@ import kotlin.collections.none
 import kotlin.text.isNotBlank
 import kotlin.text.removePrefix
 import androidx.core.net.toUri
+import com.saschl.cameragps.R
 
 /**
  * The PermissionBox uses a [Box] to show a simple permission request UI when the provided [permission]
@@ -391,22 +393,22 @@ private fun EnhancedPermissionScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Step 1: Location & Bluetooth Access",
+                    text = stringResource(R.string.step1_title),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Required for connecting to your Sony camera and accessing location data.",
+                    text = stringResource(R.string.step1_desc),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
                 if (!allForegroundGranted) {
-                    val revokedPermissions = foregroundPermissionState.revokedPermissions
-                        .joinToString("\n") { " - " + it.permission.removePrefix("android.permission.") }
+                    val revokedPermissions = foregroundPermissionState.revokedPermissions.map { it -> stringResource(getPermissionDescription(it.permission)) }
+                        .joinToString("\n") { " - $it" }
 
                     Text(
-                        text = "Missing permissions:\n$revokedPermissions",
+                        text = stringResource(R.string.step1_missing) + "\n" + revokedPermissions,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
@@ -420,11 +422,11 @@ private fun EnhancedPermissionScreen(
                             }
                         },
                     ) {
-                        Text(text = "Grant Location & Bluetooth Access")
+                        Text(text = stringResource(R.string.step1_grant))
                     }
                 } else {
                     Text(
-                        text = "✓ Granted",
+                        text = stringResource(R.string.step1_granted),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -450,12 +452,12 @@ private fun EnhancedPermissionScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Step 2: Background Location Access",
+                        text = stringResource(R.string.step2_title),
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Allows continuous GPS sync to your camera even when the app is in the background or screen is off.",
+                        text = stringResource(R.string.step2_desc),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -463,7 +465,7 @@ private fun EnhancedPermissionScreen(
                     if (!backgroundLocationPermission.status.isGranted) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             Text(
-                                text = "⚠️ On Android 10+, you'll need to select \"Allow all the time\" in the next dialog",
+                                text = stringResource(R.string.step2_android10_warning),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.tertiary,
                                 modifier = Modifier.padding(bottom = 12.dp)
@@ -479,11 +481,11 @@ private fun EnhancedPermissionScreen(
                                 }
                             },
                         ) {
-                            Text(text = "Grant Background Location")
+                            Text(text = stringResource(R.string.step2_grant))
                         }
                     } else {
                         Text(
-                            text = "✓ Granted",
+                            text = stringResource(R.string.step2_granted),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -558,5 +560,20 @@ private fun EnhancedPermissionScreen(
                 }
             }
         )
+    }
+
+}
+
+/**
+ * Gets a user-friendly description for what the permission is used for
+ */
+fun getPermissionDescription(permission: String): Int {
+    //val context = LocalContext.current
+    return when (permission) {
+        Manifest.permission.ACCESS_FINE_LOCATION -> R.string.permission_gps
+        Manifest.permission.ACCESS_BACKGROUND_LOCATION -> R.string.permission_background_gps
+        Manifest.permission.BLUETOOTH_CONNECT -> R.string.permission_bluetooth
+        Manifest.permission.POST_NOTIFICATIONS -> R.string.permission_notifications
+        else -> -1
     }
 }
