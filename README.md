@@ -4,7 +4,7 @@ App for transmitting location data to sony cameras. I was fed up with the offici
 
 It makes use of the companion device manager APIs of Android which *should* provide a reliable way to launch the transmission even when the app is in the background and the screen is off. However, due to limited devices and emulators not providing bluetooth access I couldn't test it with many android versions (15 and 16 up to now).
 
-I also only have access to an Alpha 6400, but it should probably work with most of the 6000 series devices (?).
+I also only have access to an Alpha 6400, but it should probably work with most of the 6000 series devices (?). I'm also not a very good android dev, but it supports dark mode (yay)
 
 
 ## How to install?
