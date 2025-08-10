@@ -1,6 +1,6 @@
 ## What is it?
 
-App for transmitting location data to sony cameras. I was fed up with the official app and found a python script () that got the protocol right, so I thought let's make a better app.
+App for transmitting location data to sony cameras. I was fed up with the official app and found a python script (https://github.com/anoulis/sony_camera_bluetooth_external_gps) that got the protocol right, so I thought let's make a better app.
 
 It makes use of the companion device manager APIs of Android which *should* provide a reliable way to launch the transmission even when the app is in the background and the screen is off. However, due to limited devices and emulators not providing bluetooth access I couldn't test it with many android versions (15 and 16 up to now).
 
