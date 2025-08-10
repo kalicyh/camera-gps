@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">CameraGps</string>
+    <string name="foreground_service_notification">Transmitting location data to camera</string>
+    <string name="scan_for_devices">Click to find &amp; associate your camera</string>
+</resources>
