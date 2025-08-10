@@ -148,7 +148,7 @@ private data class DeviceConnectionState(
     }
 }
 
-@RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+/*@RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
 @Composable
 private fun BLEConnectEffect(
     device: BluetoothDevice,
@@ -215,9 +215,7 @@ private fun BLEConnectEffect(
                 status: Int,
             ) {
                 super.onCharacteristicRead(gatt, characteristic, status)
-                //   if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 doOnRead(characteristic.value)
-                //    }
             }
 
             override fun onCharacteristicRead(
@@ -267,8 +265,12 @@ private fun BLEConnectEffect(
             state.gatt?.close()
             state = DeviceConnectionState.None
         }
+        onDispose {
+            state.gatt?.close()
+            state = DeviceConnectionState.None
+        }
     }
-}
+}*/
 
 internal fun Int.toConnectionStateString() = when (this) {
     BluetoothProfile.STATE_CONNECTED -> "Connected"
@@ -328,7 +330,7 @@ fun ConnectDeviceScreen(device: BluetoothDevice, onClose: () -> Unit) {
         )
     }
 
-    // This effect will handle the connection and notify when the state changes
+/*    // This effect will handle the connection and notify when the state changes
     BLEConnectEffect(device = device) {
         // update our state to recompose the UI
         state = it
@@ -346,7 +348,7 @@ fun ConnectDeviceScreen(device: BluetoothDevice, onClose: () -> Unit) {
                 showPairingDialog = true
             }
         }
-    }
+    }*/
 
     Column(
         modifier = Modifier
@@ -512,6 +514,12 @@ private fun DevicesScreen(
             }) { Text(text = stringResource(R.string.view_logs)) }
             ScanForDevicesMenu(deviceManager) {
                 associatedDevices = associatedDevices + it
+                val serviceIntent = Intent(context.applicationContext, LocationSenderService::class.java)
+                serviceIntent.putExtra("address", it.address.uppercase(Locale.getDefault()))
+                serviceIntent.putExtra("startedManually", true)
+                Timber.i("Starting LocationSenderService for address: $it.address")
+                startForegroundService(context, serviceIntent)
+
             }
             AssociatedDevicesList(
                 associatedDevices = associatedDevices,
@@ -619,11 +627,7 @@ private fun ScanForDevicesMenu(
                 } else {
                     deviceManager.startObservingDevicePresence(device.address)
                 }
-                val serviceIntent = Intent(context.applicationContext, LocationSenderService::class.java)
-                serviceIntent.putExtra("address", device.address.uppercase(Locale.getDefault()))
-                serviceIntent.putExtra("startedManually", true)
-                Timber.i("Starting LocationSenderService for address: $device.address")
-                startForegroundService(context, serviceIntent)
+
                 pendingPairingDevice = null
 
             },
