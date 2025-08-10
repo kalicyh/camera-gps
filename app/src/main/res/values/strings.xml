@@ -13,7 +13,7 @@
     <string name="step1_granted">&#10003; Granted</string>
     <string name="step2_title">Step 2: Background Location Access</string>
     <string name="step2_desc">Allows continuous GPS sync to your camera even when the app is in the background or screen is off.</string>
-    <string name="step2_android10_warning">⚠️ On Android 10+, you'll need to select "Allow all the time" in the next dialog</string>
+    <string name="step2_android10_warning">You\'ll need to select "Allow all the time" in the next dialog</string>
     <string name="step2_grant">Grant Background Location</string>
     <string name="step2_granted">&#10003; Granted</string>
 </resources>
