@@ -17,7 +17,6 @@
 package com.saschl.cameragps.service
 
 import android.Manifest
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothDevice.TRANSPORT_AUTO
 import android.bluetooth.BluetoothGatt
@@ -32,10 +31,7 @@ import android.companion.AssociationRequest
 import android.companion.BluetoothLeDeviceFilter
 import android.companion.CompanionDeviceManager
 import android.companion.ObservingDevicePresenceRequest
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.IntentSender
 import android.os.Build
 import android.util.Log
@@ -55,14 +51,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -87,6 +81,17 @@ import com.saschl.cameragps.R
 import com.saschl.cameragps.service.AssociatedDeviceCompat
 import com.saschl.cameragps.service.getAssociatedDevices
 import com.saschl.cameragps.service.toAssociatedDevice
+import com.saschl.cameragps.service.pairing.BluetoothPairingEffect
+import com.saschl.cameragps.service.pairing.BluetoothPairingState
+import com.saschl.cameragps.service.pairing.BondingStateListener
+import com.saschl.cameragps.service.pairing.PairingConfirmationDialogWithLoading
+import com.saschl.cameragps.service.pairing.PairingDialogState
+import com.saschl.cameragps.service.pairing.PairingManager
+import com.saschl.cameragps.service.pairing.PairingResult
+import com.saschl.cameragps.service.pairing.PairingState
+import com.saschl.cameragps.service.pairing.PairingTrigger
+import com.saschl.cameragps.service.pairing.initiateBluetoothPairing
+import com.saschl.cameragps.service.pairing.isDevicePaired
 import com.saschl.cameragps.ui.EnhancedLocationPermissionBox
 import com.saschl.cameragps.ui.LogViewerActivity
 import com.saschl.cameragps.service.CompanionDeviceSampleService.Companion.CHARACTERISTIC_UUID
@@ -99,7 +104,6 @@ import java.nio.ByteBuffer
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.util.Locale
 import java.util.concurrent.Executor
 import java.util.regex.Pattern
 import kotlin.random.Random
@@ -289,10 +293,13 @@ fun ConnectDeviceScreen(device: BluetoothDevice, onClose: () -> Unit) {
         mutableStateOf<DeviceConnectionState?>(null)
     }
 
-    // Track Bluetooth pairing state
+    // Track Bluetooth pairing state using the centralized pairing system
     var pairingState by remember(device) {
         mutableStateOf(BluetoothPairingState())
     }
+
+    // Show pairing dialog if device is not paired
+    var showPairingDialog by remember(device) { mutableStateOf(false) }
 
     // Once the device services are discovered find the GATTServerSample service
     val service by remember(state) {
@@ -303,13 +310,26 @@ fun ConnectDeviceScreen(device: BluetoothDevice, onClose: () -> Unit) {
         mutableStateOf(service?.getCharacteristic(CHARACTERISTIC_UUID))
     }
 
-    // Handle Bluetooth pairing
+    // Handle Bluetooth pairing using the centralized pairing system
     BluetoothPairingEffect(
         device = device,
         onPairingStateChange = { newPairingState ->
             pairingState = newPairingState
         }
     )
+
+    // Show pairing trigger when needed
+    if (showPairingDialog) {
+        PairingTrigger(
+            device = device,
+            onPairingStateChange = { newPairingState ->
+                pairingState = newPairingState
+                if (newPairingState.state == PairingState.PAIRED) {
+                    showPairingDialog = false
+                }
+            }
+        )
+    }
 
     // This effect will handle the connection and notify when the state changes
     BLEConnectEffect(device = device) {
@@ -321,10 +341,8 @@ fun ConnectDeviceScreen(device: BluetoothDevice, onClose: () -> Unit) {
             // Check if we need to pair the device
             val adapter = context.getSystemService<BluetoothManager>()?.adapter
             if (!isDevicePaired(adapter, device.address) && pairingState.state != PairingState.PAIRING) {
-                Timber.i("Device not paired, initiating pairing process")
-                scope.launch {
-                    initiateBluetoothPairing(device)
-                }
+                Timber.i("Device not paired, showing pairing dialog")
+                showPairingDialog = true
             }
         }
     }
@@ -339,7 +357,7 @@ fun ConnectDeviceScreen(device: BluetoothDevice, onClose: () -> Unit) {
         Text(text = "Device Details", style = MaterialTheme.typography.headlineSmall)
         Text(text = "Name: ${device.name} (${device.address})")
 
-        // Show pairing status
+        // Show pairing status using centralized state
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -376,14 +394,11 @@ fun ConnectDeviceScreen(device: BluetoothDevice, onClose: () -> Unit) {
         Text(text = "Message sent: ${state?.messageSent}")
         Text(text = "Message received: ${state?.messageReceived}")
 
-        // Manual pairing button
+        // Manual pairing button using centralized pairing
         Button(
             enabled = pairingState.state == PairingState.NOT_PAIRED || pairingState.state == PairingState.PAIRING_FAILED,
             onClick = {
-                scope.launch {
-                    Timber.i("Manual pairing initiated for ${device.name}")
-                    initiateBluetoothPairing(device)
-                }
+                showPairingDialog = true
             },
         ) {
             Text(text = if (pairingState.state == PairingState.PAIRING) "Pairing..." else "Pair Device")
@@ -476,24 +491,24 @@ private fun DevicesScreen(
         mutableStateOf(deviceManager.getAssociatedDevices())
     }
 
-    // Single state for pairing dialog
-    var pairingDialogState by remember { mutableStateOf(PairingDialogState.Hidden) }
+    // Simplified pairing management using the new PairingManager
+    var currentPairingDevice by remember { mutableStateOf<AssociatedDeviceCompat?>(null) }
 
     LaunchedEffect(associatedDevices) {
         associatedDevices.forEach { device ->
-            // After starting device presence observation, check if pairing is needed
             scope.launch {
                 val bluetoothManager = context.getSystemService<BluetoothManager>()
                 val adapter = bluetoothManager?.adapter
-                val bluetoothDevice = device.device ?: adapter?.getRemoteDevice(device.address)
 
-                if (bluetoothDevice != null && !isDevicePaired(adapter, device.address)) {
-                    Timber.i("Device ${device.name} not paired, showing pairing confirmation dialog")
-                    pairingDialogState = PairingDialogState(device = device, isVisible = true)
-                } else if (isDevicePaired(adapter, device.address)) {
+                if (!isDevicePaired(adapter, device.address)) {
+                    Timber.i("Device ${device.name} not paired, will show pairing dialog")
+                    currentPairingDevice = device
+                } else {
                     Timber.i("Device ${device.name} is already paired")
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                        deviceManager.startObservingDevicePresence(ObservingDevicePresenceRequest.Builder().setAssociationId(device.id).build())
+                        deviceManager.startObservingDevicePresence(
+                            ObservingDevicePresenceRequest.Builder().setAssociationId(device.id).build()
+                        )
                     } else {
                         deviceManager.startObservingDevicePresence(device.address)
                     }
@@ -502,41 +517,20 @@ private fun DevicesScreen(
         }
     }
 
-    // Show pairing confirmation dialog
-    pairingDialogState.device?.let { device ->
-        if (pairingDialogState.isVisible) {
-            PairingConfirmationDialog(
-                deviceName = device.name,
-                onConfirm = {
-                    scope.launch {
-                        val bluetoothManager = context.getSystemService<BluetoothManager>()
-                        val adapter = bluetoothManager?.adapter
-                        val bluetoothDevice = device.device ?: adapter?.getRemoteDevice(device.address)
-
-                        if (bluetoothDevice != null) {
-                            Timber.i("User confirmed pairing for ${device.name}, initiating pairing")
-                            val pairingResult = initiateBluetoothPairing(bluetoothDevice)
-                            if (pairingResult) {
-                                Timber.i("Pairing initiated successfully for ${device.name}")
-                                Timber.i("Starting observing device presence for ${device.name})")
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                                    deviceManager.startObservingDevicePresence(ObservingDevicePresenceRequest.Builder().setAssociationId(device.id).build())
-                                } else {
-                                    deviceManager.startObservingDevicePresence(device.address)
-                                }
-                            } else {
-                                Timber.w("Failed to initiate pairing for ${device.name}")
-                            }
-                        }
-                    }
-                    pairingDialogState = PairingDialogState.Hidden
-                },
-                onDismiss = {
-                    Timber.i("User cancelled pairing for ${device.name}")
-                    pairingDialogState = PairingDialogState.Hidden
-                }
-            )
-        }
+    // Use the centralized PairingManager for any device that needs pairing
+    currentPairingDevice?.let { device ->
+        PairingManager(
+            device = device,
+            deviceManager = deviceManager,
+            onPairingComplete = {
+                Timber.i("Pairing completed for ${device.name}")
+                currentPairingDevice = null
+            },
+            onPairingCancelled = {
+                Timber.i("Pairing cancelled for ${device.name}")
+                currentPairingDevice = null
+            }
+        )
     }
 
     Scaffold(
@@ -790,22 +784,7 @@ private suspend fun requestDeviceAssociation(deviceManager: CompanionDeviceManag
         }
 
         override fun onAssociationCreated(associationInfo: AssociationInfo) {
-
             Timber.i("Association created: ${associationInfo.displayName} (${associationInfo.id})")
-            // If you want to start observing the device presence you can do it here.
-            // This will allow you to receive events when the device is nearby or not.
-            // Note that this is only available in API 34 and above.
-        /*    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                deviceManager.startObservingDevicePresence(
-                    ObservingDevicePresenceRequest.Builder().setAssociationId(associationInfo.id)
-                        .build()
-                )
-            } else {
-                deviceManager.myAssociations.stream().filter { it -> it.id == associationInfo. }
-                deviceManager.startOmyAssociationsbservingDevicePresence(it.toAssociatedDevice().address)
-            }*/
-            // This callback was added in API 33 but the result is also send in the activity result.
-            // For handling backwards compatibility we can just have all the logic there instead
         }
 
         override fun onFailure(errorMessage: CharSequence?) {
@@ -822,166 +801,3 @@ private suspend fun requestDeviceAssociation(deviceManager: CompanionDeviceManag
     return result.await()
 }
 
-// Bluetooth pairing state and functionality
-enum class PairingState {
-    NOT_PAIRED,
-    PAIRING,
-    PAIRED,
-    PAIRING_FAILED
-}
-
-data class BluetoothPairingState(
-    val state: PairingState = PairingState.NOT_PAIRED,
-    val errorMessage: String? = null
-)
-
-@RequiresPermission(allOf = [Manifest.permission.BLUETOOTH_CONNECT])
-fun isDevicePaired(adapter: BluetoothAdapter?, deviceAddress: String): Boolean {
-    return adapter?.bondedDevices?.any { it.address == deviceAddress.uppercase(Locale.getDefault()) } ?: false
-}
-
-@RequiresPermission(allOf = [Manifest.permission.BLUETOOTH_CONNECT])
-fun initiateBluetoothPairing(device: BluetoothDevice): Boolean {
-    return try {
-        device.createBond()
-    } catch (e: SecurityException) {
-        Timber.e(e, "Failed to initiate pairing due to security exception")
-        false
-    } catch (e: Exception) {
-        Timber.e(e, "Failed to initiate pairing")
-        false
-    }
-}
-
-@Composable
-fun BluetoothPairingEffect(
-    device: BluetoothDevice,
-    onPairingStateChange: (BluetoothPairingState) -> Unit,
-    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
-) {
-    val context = LocalContext.current
-    val currentOnPairingStateChange by rememberUpdatedState(onPairingStateChange)
-
-    DisposableEffect(device, lifecycleOwner) {
-        var pairingState by mutableStateOf(BluetoothPairingState())
-
-        val pairingReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                when (intent?.action) {
-                    BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
-                        val bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE)
-                        val bondedDevice = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
-                        } else {
-                            @Suppress("DEPRECATION")
-                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
-                        }
-
-                        if (bondedDevice?.address == device.address) {
-                            when (bondState) {
-                                BluetoothDevice.BOND_BONDING -> {
-                                    pairingState = BluetoothPairingState(PairingState.PAIRING)
-                                    currentOnPairingStateChange(pairingState)
-                                    Timber.i("Bluetooth pairing in progress with ${device.name}")
-                                }
-                                BluetoothDevice.BOND_BONDED -> {
-                                    pairingState = BluetoothPairingState(PairingState.PAIRED)
-                                    currentOnPairingStateChange(pairingState)
-                                    Timber.i("Bluetooth pairing successful with ${device.name}")
-                                }
-                                BluetoothDevice.BOND_NONE -> {
-                                    pairingState = BluetoothPairingState(
-                                        PairingState.PAIRING_FAILED,
-                                        "Pairing failed or bond was removed"
-                                    )
-                                    currentOnPairingStateChange(pairingState)
-                                    Timber.w("Bluetooth pairing failed with ${device.name}")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
-        context.registerReceiver(pairingReceiver, filter)
-
-        // Check initial pairing state
-        val adapter = context.getSystemService<BluetoothManager>()?.adapter
-        val isAlreadyPaired = isDevicePaired(adapter, device.address)
-        if (isAlreadyPaired) {
-            pairingState = BluetoothPairingState(PairingState.PAIRED)
-            currentOnPairingStateChange(pairingState)
-        } else {
-            pairingState = BluetoothPairingState(PairingState.NOT_PAIRED)
-            currentOnPairingStateChange(pairingState)
-        }
-
-        onDispose {
-            context.unregisterReceiver(pairingReceiver)
-        }
-    }
-}
-
-@Composable
-private fun PairingConfirmationDialog(
-    deviceName: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Camera Pairing Required",
-                style = MaterialTheme.typography.headlineSmall
-            )
-        },
-        text = {
-            Column {
-                Text(
-                    text = "To pair with your camera '$deviceName', please:",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "\n1. Turn on your camera",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "2. Go to camera settings and enable Bluetooth/Pairing mode",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "3. Make sure the camera is discoverable",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "\nOnce your camera is ready, tap 'Continue' to start pairing.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text("Continue")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
-
-// Data class to hold pairing dialog state
-private data class PairingDialogState(
-    val device: AssociatedDeviceCompat? = null,
-    val isVisible: Boolean = false
-) {
-    companion object {
-        val Hidden = PairingDialogState()
-    }
-}
