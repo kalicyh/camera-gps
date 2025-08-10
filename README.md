@@ -14,6 +14,7 @@ I also only have access to an Alpha 6400, but it should probably work with most 
 ## How does it work?
 
 ### Associate the device
+- Make sure you grant the app the needed permissions. Background location is important so that the app runs properly when the phone is not in use.
 - Select Start and follow the instructions. Make sure bluetooth is turned on and the camera is in coupling mode (if it was not coupled before already, then this step is not neccesary). The app should prompt you to bond the device if needed.
 - After selecting the device, it should appear on the list of associated devices and will start transmitting the location data.
 - When turning off the camera, the transmission will stop. Once android realizes the device is gone, the service will also be destroyed, releasing any resources the app uses.
@@ -21,4 +22,6 @@ I also only have access to an Alpha 6400, but it should probably work with most 
 
 
 
-<img width="545" height="1143" alt="image" src="https://github.com/user-attachments/assets/39d0d1b6-7bec-40ee-96e3-183bc0ee3b35" />
+<img width="250" alt="image" src="https://github.com/user-attachments/assets/39d0d1b6-7bec-40ee-96e3-183bc0ee3b35" />
+
+<img width="250" alt="Image pairing" src="https://github.com/user-attachments/assets/b4315cb9-a817-4ff5-93db-21032e47e939"/>
