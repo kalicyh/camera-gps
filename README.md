@@ -7,6 +7,10 @@ It makes use of the companion device manager APIs of Android which *should* prov
 I also only have access to an Alpha 6400, but it should probably work with most of the 6000 series devices (?).
 
 
+## How to install?
+- Get the APK from the releases and install it directly on your phone. Or use Obtainium and enter the repo URL for a more seamless experience.
+  
+
 ## How does it work?
 
 ### Associate the device
@@ -14,3 +18,7 @@ I also only have access to an Alpha 6400, but it should probably work with most 
 - After selecting the device, it should appear on the list of associated devices and will start transmitting the location data.
 - When turning off the camera, the transmission will stop. Once android realizes the device is gone, the service will also be destroyed, releasing any resources the app uses.
 - Check the logs if any issues are found and post them here.
+
+
+
+<img width="545" height="1143" alt="image" src="https://github.com/user-attachments/assets/39d0d1b6-7bec-40ee-96e3-183bc0ee3b35" />
