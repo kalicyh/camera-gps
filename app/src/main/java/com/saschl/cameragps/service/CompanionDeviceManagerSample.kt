@@ -17,6 +17,7 @@
 package com.saschl.cameragps.service
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothDevice.TRANSPORT_AUTO
 import android.bluetooth.BluetoothGatt
@@ -72,30 +73,23 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat.startForegroundService
 import androidx.core.content.getSystemService
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.saschl.cameragps.R
-import com.saschl.cameragps.service.AssociatedDeviceCompat
-import com.saschl.cameragps.service.getAssociatedDevices
-import com.saschl.cameragps.service.toAssociatedDevice
+import com.saschl.cameragps.service.CompanionDeviceSampleService.Companion.CHARACTERISTIC_UUID
+import com.saschl.cameragps.service.CompanionDeviceSampleService.Companion.SERVICE_UUID
 import com.saschl.cameragps.service.pairing.BluetoothPairingEffect
 import com.saschl.cameragps.service.pairing.BluetoothPairingState
-import com.saschl.cameragps.service.pairing.BondingStateListener
-import com.saschl.cameragps.service.pairing.PairingConfirmationDialogWithLoading
-import com.saschl.cameragps.service.pairing.PairingDialogState
 import com.saschl.cameragps.service.pairing.PairingManager
-import com.saschl.cameragps.service.pairing.PairingResult
 import com.saschl.cameragps.service.pairing.PairingState
 import com.saschl.cameragps.service.pairing.PairingTrigger
-import com.saschl.cameragps.service.pairing.initiateBluetoothPairing
 import com.saschl.cameragps.service.pairing.isDevicePaired
 import com.saschl.cameragps.ui.EnhancedLocationPermissionBox
 import com.saschl.cameragps.ui.LogViewerActivity
-import com.saschl.cameragps.service.CompanionDeviceSampleService.Companion.CHARACTERISTIC_UUID
-import com.saschl.cameragps.service.CompanionDeviceSampleService.Companion.SERVICE_UUID
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -104,10 +98,12 @@ import java.nio.ByteBuffer
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.util.Locale
 import java.util.concurrent.Executor
 import java.util.regex.Pattern
 import kotlin.random.Random
 
+@SuppressLint("MissingPermission")
 @Composable
 fun CompanionDeviceManagerSample() {
 
@@ -125,6 +121,7 @@ fun CompanionDeviceManagerSample() {
                 DevicesScreen(deviceManager) { device ->
                     selectedDevice =
                         (device.device ?: adapter.getRemoteDevice(device.address))
+
                 }
             }
         } else {
@@ -340,7 +337,11 @@ fun ConnectDeviceScreen(device: BluetoothDevice, onClose: () -> Unit) {
         if (it.gatt != null) {
             // Check if we need to pair the device
             val adapter = context.getSystemService<BluetoothManager>()?.adapter
-            if (!isDevicePaired(adapter, device.address) && pairingState.state != PairingState.PAIRING) {
+            if (!isDevicePaired(
+                    adapter,
+                    device.address
+                ) && pairingState.state != PairingState.PAIRING
+            ) {
                 Timber.i("Device not paired, showing pairing dialog")
                 showPairingDialog = true
             }
@@ -479,6 +480,10 @@ fun set_date(zoneId: ZoneId): ByteArray {
 }
 
 
+private fun onDeviceAssociated(device: AssociatedDeviceCompat) {
+
+}
+
 @Composable
 private fun DevicesScreen(
     deviceManager: CompanionDeviceManager,
@@ -505,18 +510,19 @@ private fun DevicesScreen(
                     currentPairingDevice = device
                 } else {
                     Timber.i("Device ${device.name} is already paired")
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                        deviceManager.startObservingDevicePresence(
-                            ObservingDevicePresenceRequest.Builder().setAssociationId(device.id).build()
-                        )
-                    } else {
-                        deviceManager.startObservingDevicePresence(device.address)
-                    }
+                    /*  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                          deviceManager.startObservingDevicePresence(
+                              ObservingDevicePresenceRequest.Builder().setAssociationId(device.id).build()
+                          )
+                      } else {
+                          deviceManager.startObservingDevicePresence(device.address)
+                      }*/
                 }
             }
         }
     }
 
+/*
     // Use the centralized PairingManager for any device that needs pairing
     currentPairingDevice?.let { device ->
         PairingManager(
@@ -524,7 +530,20 @@ private fun DevicesScreen(
             deviceManager = deviceManager,
             onPairingComplete = {
                 Timber.i("Pairing completed for ${device.name}")
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                    deviceManager.startObservingDevicePresence(
+                        ObservingDevicePresenceRequest.Builder().setAssociationId(device.id).build()
+                    )
+                } else {
+                    deviceManager.startObservingDevicePresence(device.address)
+                }
+                val serviceIntent = Intent(context.applicationContext, LocationSenderService::class.java)
+                serviceIntent.putExtra("address", device.address.uppercase(Locale.getDefault()))
+                serviceIntent.putExtra("startedManually", true)
+                Timber.i("Starting LocationSenderService for address: $device.address")
+                startForegroundService(context, serviceIntent)
                 currentPairingDevice = null
+
             },
             onPairingCancelled = {
                 Timber.i("Pairing cancelled for ${device.name}")
@@ -532,6 +551,7 @@ private fun DevicesScreen(
             }
         )
     }
+*/
 
     Scaffold(
         topBar = {
@@ -548,7 +568,7 @@ private fun DevicesScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
 
-        ) {
+            ) {
             Button(onClick = {
                 context.startActivity(
                     Intent(
@@ -599,16 +619,31 @@ private fun ScanForDevicesMenu(
     onDeviceAssociated: (AssociatedDeviceCompat) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     var errorMessage by remember {
         mutableStateOf("")
     }
+
+    // State for managing pairing after association
+    var pendingPairingDevice by remember { mutableStateOf<AssociatedDeviceCompat?>(null) }
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult(),
     ) {
         when (it.resultCode) {
             CompanionDeviceManager.RESULT_OK -> {
                 it.data?.getAssociationResult()?.run {
-                    onDeviceAssociated(this)
+                    // Device association successful, now check if pairing is needed
+                    val bluetoothManager = context.getSystemService<BluetoothManager>()
+                    val adapter = bluetoothManager?.adapter
+
+                    if (!isDevicePaired(adapter, this.address)) {
+                        Timber.i("Device ${this.name} associated but not paired, initiating pairing")
+                        pendingPairingDevice = this
+                    } else {
+                        Timber.i("Device ${this.name} already paired, completing association")
+                        onDeviceAssociated(this)
+                    }
                 }
             }
 
@@ -633,6 +668,39 @@ private fun ScanForDevicesMenu(
             }
         }
     }
+
+    // Handle pairing for newly associated device
+    pendingPairingDevice?.let { device ->
+        PairingManager(
+            device = device,
+            deviceManager = deviceManager,
+            onPairingComplete = {
+                Timber.i("Pairing completed for newly associated device ${device.name}")
+                onDeviceAssociated(device)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                    deviceManager.startObservingDevicePresence(
+                        ObservingDevicePresenceRequest.Builder().setAssociationId(device.id).build()
+                    )
+                } else {
+                    deviceManager.startObservingDevicePresence(device.address)
+                }
+                val serviceIntent = Intent(context.applicationContext, LocationSenderService::class.java)
+                serviceIntent.putExtra("address", device.address.uppercase(Locale.getDefault()))
+                serviceIntent.putExtra("startedManually", true)
+                Timber.i("Starting LocationSenderService for address: $device.address")
+                startForegroundService(context, serviceIntent)
+                pendingPairingDevice = null
+
+            },
+            onPairingCancelled = {
+                Timber.i("Pairing cancelled for newly associated device ${device.name}")
+                // Still add the device even if pairing was cancelled
+                onDeviceAssociated(device)
+                pendingPairingDevice = null
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -768,7 +836,7 @@ private suspend fun requestDeviceAssociation(deviceManager: CompanionDeviceManag
         // Find only devices that match this request filter.
         .addDeviceFilter(deviceFilter)
         // Stop scanning as soon as one device matching the filter is found.
-      //  .setSingleDevice(true)
+        //  .setSingleDevice(true)
         .build()
 
     val result = CompletableDeferred<IntentSender>()

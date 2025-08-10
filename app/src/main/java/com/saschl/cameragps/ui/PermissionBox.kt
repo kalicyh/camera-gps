@@ -274,11 +274,18 @@ fun EnhancedLocationPermissionBox(
     var errorText by remember { mutableStateOf("") }
 
     // Foreground location permissions
-    val foregroundLocationPermissions = listOf(
-        Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.BLUETOOTH_CONNECT,
-        Manifest.permission.POST_NOTIFICATIONS
-    )
+    val foregroundLocationPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        listOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.POST_NOTIFICATIONS
+        )
+    } else {
+        listOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.BLUETOOTH_CONNECT,
+        )
+    }
 
     val foregroundPermissionState = rememberMultiplePermissionsState(
         permissions = foregroundLocationPermissions
@@ -295,10 +302,10 @@ fun EnhancedLocationPermissionBox(
     val backgroundLocationPermission = rememberPermissionState(
         permission = Manifest.permission.ACCESS_BACKGROUND_LOCATION
     ) { granted ->
-        if (!granted) {
-            errorText = "Background location access required for continuous GPS sync when app is not in foreground"
+        errorText = if (!granted) {
+            "Background location access required for continuous GPS sync when app is not in foreground"
         } else {
-            errorText = ""
+            ""
         }
     }
 
@@ -333,7 +340,7 @@ fun EnhancedLocationPermissionBox(
                 onClick = {
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                        data = Uri.parse("package:${context.packageName}")
+                        data = "package:${context.packageName}".toUri()
                     }
                     context.startActivity(intent)
                 },

@@ -48,6 +48,8 @@ class LocationSenderService : Service() {
 
     private var shutdownTimer = Timer()
 
+    private var startedManually: Boolean = false
+
     companion object {
 
         // Random UUID for our service known between the client and server to allow communication
@@ -98,6 +100,8 @@ class LocationSenderService : Service() {
 
                 Timber.e("An error happened: $status")
                 fusedLocationClient.removeLocationUpdates(locationCallback)
+
+
                 shutdownTimer = Timer()
                 /* shutdownTimer.schedule(object : TimerTask() {
                      override fun run() {
@@ -109,6 +113,10 @@ class LocationSenderService : Service() {
                      }
 
                  }, 120000)*/
+
+                if(startedManually) {
+                    stopSelf()
+                }
             } else {
                 shutdownTimer.cancel()
                 shutdownTimer.purge()
@@ -197,6 +205,7 @@ class LocationSenderService : Service() {
         this.startId = startId;
 
         val address = intent?.getStringExtra("address")
+        startedManually = intent?.getBooleanExtra("startedManually", false)?: false
         var device: BluetoothDevice? = null
 
         // if(address == null)
