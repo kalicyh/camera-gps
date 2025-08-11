@@ -652,7 +652,7 @@ private fun ScanForDevicesMenu(
         Row {
             Text(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .weight(1f),
                 text = stringResource(R.string.scan_for_devices),
             )
@@ -774,7 +774,7 @@ private suspend fun requestDeviceAssociation(deviceManager: CompanionDeviceManag
 
     val pairingRequest: AssociationRequest = AssociationRequest.Builder()
         // Find only devices that match this request filter.
-       // .addDeviceFilter(deviceFilter)
+        .addDeviceFilter(deviceFilter)
         // Stop scanning as soon as one device matching the filter is found.
         //  .setSingleDevice(true)
         .build()

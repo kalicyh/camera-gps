@@ -230,7 +230,7 @@ class LocationSenderService : Service() {
 
             gatt1 = device?.connectGatt(this, true, callback)
         }
-        return START_STICKY
+        return START_REDELIVER_INTENT
     }
 
     @SuppressLint("MissingPermission")

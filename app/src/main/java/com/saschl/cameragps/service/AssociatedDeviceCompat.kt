@@ -21,11 +21,11 @@ import android.companion.AssociationInfo
 import android.companion.CompanionDeviceManager
 import android.os.Build
 import androidx.annotation.RequiresApi
+import java.util.Locale
 
 /**
  * Wrapper for the different type of classes the CDM returns
  */
-@RequiresApi(Build.VERSION_CODES.S)
 data class AssociatedDeviceCompat(
     val id: Int,
     val address: String,
@@ -44,7 +44,7 @@ internal fun CompanionDeviceManager.getAssociatedDevices(): List<AssociatedDevic
         associations.map {
             AssociatedDeviceCompat(
                 id = -1,
-                address = it,
+                address = it.uppercase(Locale.getDefault()),
                 name = "",
                 device = null,
             )
@@ -57,7 +57,7 @@ internal fun CompanionDeviceManager.getAssociatedDevices(): List<AssociatedDevic
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 internal fun AssociationInfo.toAssociatedDevice() = AssociatedDeviceCompat(
     id = id,
-    address = deviceMacAddress?.toString() ?: "N/A",
+    address = deviceMacAddress?.toString().let { it?.uppercase(Locale.getDefault()) } ?: "N/A",
     name = displayName?.ifBlank { "N/A" }?.toString() ?: "N/A",
     device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
         associatedDevice?.bleDevice?.device
