@@ -121,7 +121,7 @@ fun PermissionBox(
         errorText = if (rejectedPermissions.none { it in requiredPermissions }) {
             ""
         } else {
-            "${rejectedPermissions.joinToString()} required for the sample"
+            context.getString(R.string.permissions_required_error, rejectedPermissions.joinToString())
         }
     }
     val allRequiredPermissionsGranted =
@@ -162,7 +162,7 @@ fun PermissionBox(
                     context.startActivity(intent)
                 },
             ) {
-                Icon(imageVector = Icons.Rounded.Settings, contentDescription = "App settings")
+                Icon(imageVector = Icons.Rounded.Settings, contentDescription = stringResource(R.string.app_settings))
             }
         }
     }
@@ -192,7 +192,7 @@ private fun PermissionScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = "Sample requires permission/s:",
+            text = stringResource(R.string.sample_requires_permissions),
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(16.dp),
         )
@@ -217,7 +217,7 @@ private fun PermissionScreen(
                 }
             },
         ) {
-            Text(text = "Grant permissions")
+            Text(text = stringResource(R.string.grant_permissions))
         }
         if (errorText.isNotBlank()) {
             Text(
@@ -233,10 +233,10 @@ private fun PermissionScreen(
                 showRationale = false
             },
             title = {
-                Text(text = "Permissions required by the sample")
+                Text(text = stringResource(R.string.permissions_required_title))
             },
             text = {
-                Text(text = "The sample requires the following permissions to work:\n $permissions")
+                Text(text = stringResource(R.string.permissions_required_message, permissions))
             },
             confirmButton = {
                 TextButton(
@@ -245,7 +245,7 @@ private fun PermissionScreen(
                         state.launchMultiplePermissionRequest()
                     },
                 ) {
-                    Text("Continue")
+                    Text(stringResource(R.string.continue_button))
                 }
             },
             dismissButton = {
@@ -254,7 +254,7 @@ private fun PermissionScreen(
                         showRationale = false
                     },
                 ) {
-                    Text("Dismiss")
+                    Text(stringResource(R.string.dismiss_button))
                 }
             },
         )
@@ -294,7 +294,7 @@ fun EnhancedLocationPermissionBox(
     ) { map ->
         val rejectedPermissions = map.filterValues { !it }.keys
         errorText = if (rejectedPermissions.isNotEmpty()) {
-            "${rejectedPermissions.joinToString()} required for the app to function"
+            context.getString(R.string.permissions_required_app_error, rejectedPermissions.joinToString())
         } else {
             ""
         }
@@ -305,7 +305,7 @@ fun EnhancedLocationPermissionBox(
         permission = Manifest.permission.ACCESS_BACKGROUND_LOCATION
     ) { granted ->
         errorText = if (!granted) {
-            "Background location access required for continuous GPS sync when app is not in foreground"
+            context.getString(R.string.background_location_required_error)
         } else {
             ""
         }
@@ -347,7 +347,7 @@ fun EnhancedLocationPermissionBox(
                     context.startActivity(intent)
                 },
             ) {
-                Icon(imageVector = Icons.Rounded.Settings, contentDescription = "App settings")
+                Icon(imageVector = Icons.Rounded.Settings, contentDescription = stringResource(R.string.app_settings))
             }
         }
     }
@@ -373,7 +373,7 @@ private fun EnhancedPermissionScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = "Sony Camera GPS Permissions",
+            text = stringResource(R.string.camera_gps_permissions),
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(bottom = 16.dp),
         )
@@ -508,12 +508,9 @@ private fun EnhancedPermissionScreen(
     if (showForegroundRationale) {
         AlertDialog(
             onDismissRequest = { showForegroundRationale = false },
-            title = { Text("Location & Bluetooth Access Required") },
+            title = { Text(stringResource(R.string.location_bluetooth_access_title)) },
             text = {
-                Text("This app needs location and Bluetooth permissions to:\n" +
-                     "• Connect to your Sony camera via Bluetooth\n" +
-                     "• Access GPS coordinates to sync with your camera\n" +
-                     "• Provide accurate location data for your photos")
+                Text(stringResource(R.string.location_bluetooth_access_message))
             },
             confirmButton = {
                 TextButton(
@@ -522,12 +519,12 @@ private fun EnhancedPermissionScreen(
                         foregroundPermissionState.launchMultiplePermissionRequest()
                     }
                 ) {
-                    Text("Grant Permissions")
+                    Text(stringResource(R.string.grant_permissions_button))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showForegroundRationale = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel_button))
                 }
             }
         )
@@ -536,13 +533,9 @@ private fun EnhancedPermissionScreen(
     if (showBackgroundRationale) {
         AlertDialog(
             onDismissRequest = { showBackgroundRationale = false },
-            title = { Text("Background Location Access") },
+            title = { Text(stringResource(R.string.background_location_access_title)) },
             text = {
-                Text("Background location access enables:\n" +
-                     "• Continuous GPS sync when the app is minimized\n" +
-                     "• Location tracking even when the screen is off\n" +
-                     "• Seamless photo geotagging during long shooting sessions\n\n" +
-                     "Please select \"Allow all the time\" in the next dialog.")
+                Text(stringResource(R.string.background_location_access_message))
             },
             confirmButton = {
                 TextButton(
@@ -551,12 +544,12 @@ private fun EnhancedPermissionScreen(
                         backgroundLocationPermission.launchPermissionRequest()
                     }
                 ) {
-                    Text("Continue")
+                    Text(stringResource(R.string.continue_button))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showBackgroundRationale = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel_button))
                 }
             }
         )

@@ -491,7 +491,7 @@ private fun DevicesScreen(
     Scaffold(
         topBar = {
             Text(
-                text = "Sony Camera GPS",
+                text = stringResource(R.string.app_name_ui),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(32.dp),
             )
