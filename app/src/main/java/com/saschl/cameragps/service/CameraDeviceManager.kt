@@ -72,6 +72,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startForegroundService
 import androidx.core.content.getSystemService
@@ -651,12 +652,12 @@ private fun ScanForDevicesMenu(
         Row {
             Text(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .weight(1f),
                 text = stringResource(R.string.scan_for_devices),
             )
             Button(
-                modifier = Modifier.weight(0.3f),
+                modifier = Modifier.weight(0.7f),
                 onClick = {
                     scope.launch {
                         val intentSender = requestDeviceAssociation(deviceManager)
@@ -664,7 +665,7 @@ private fun ScanForDevicesMenu(
                     }
                 },
             ) {
-                Text(text = "Start")
+                Text(text = "Start", maxLines = 1)
             }
         }
         if (errorMessage.isNotBlank()) {
@@ -711,7 +712,7 @@ private fun AssociatedDevicesList(
                 Column(
                     Modifier
                         .fillMaxWidth()
-                        .weight(0.6f),
+                        .weight(0.8f),
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.Center,
                 ) {
@@ -773,7 +774,7 @@ private suspend fun requestDeviceAssociation(deviceManager: CompanionDeviceManag
 
     val pairingRequest: AssociationRequest = AssociationRequest.Builder()
         // Find only devices that match this request filter.
-        .addDeviceFilter(deviceFilter)
+       // .addDeviceFilter(deviceFilter)
         // Stop scanning as soon as one device matching the filter is found.
         //  .setSingleDevice(true)
         .build()
