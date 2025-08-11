@@ -6,7 +6,7 @@
     <string name="permission_background_gps">Erlaube Zugriff auf Standort wenn die App im Hintergrund ist</string>
     <string name="permission_bluetooth">Erlaube der App Bluetooth Verbindungen herzustellen</string>
     <string name="permission_notifications">Erlaube der App Benachrichtigungen anzuzeigen</string>
-    <string name="step1_title">Schritt 1: Bluetooh und Standortzugriff</string>
+    <string name="step1_title">Schritt 1: Bluetooth und Standortzugriff</string>
     <string name="step1_desc">Benötigt, damit eine Verbindung zur Kamera hergestellt werden kann und der Standort gesendet wird.</string>
     <string name="step1_missing">Fehlende Berechtigungen:</string>
     <string name="step1_grant">Erlaube Standort &amp; Bluetooth Zugriff</string>
