@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">CameraGps</string>
-    <string name="app_name_ui">Camera GPS</string>
+    <string name="app_name" translatable="false">CameraGps</string>
+    <string name="app_name_ui" translatable="false">Camera GPS</string>
     <string name="foreground_service_notification">Transmitting location data to camera</string>
     <string name="scan_for_devices">Click to find &amp; associate your camera</string>
     <string name="permission_gps">Access precise location</string>
@@ -32,11 +32,11 @@
 
     <!-- Permission rationale strings -->
     <string name="location_bluetooth_access_title">Location &amp; Bluetooth Access Required</string>
-    <string name="location_bluetooth_access_message">This app needs location and Bluetooth permissions to:\n• Connect to your Sony camera via Bluetooth\n• Access GPS coordinates to sync with your camera\n• Provide accurate location data for your photos</string>
+    <string name="location_bluetooth_access_message">This app needs location and Bluetooth permissions to: • Connect to your Sony camera via Bluetooth • Access GPS coordinates to sync with your camera • Provide accurate location data for your photos</string>
     <string name="grant_permissions_button">Grant Permissions</string>
 
     <string name="background_location_access_title">Background Location Access</string>
-    <string name="background_location_access_message">Background location access enables:\n• Continuous GPS sync when the app is minimized\n• Location tracking even when the screen is off\n• Seamless photo geotagging during long shooting sessions\n\nPlease select \"Allow all the time\" in the next dialog.</string>
+    <string name="background_location_access_message">Background location access enables: • Continuous GPS sync when the app is minimized • Location tracking even when the screen is off • Seamless photo geotagging during long shooting sessions  Please select \"Allow all the time\" in the next dialog.</string>
 
     <!-- Error messages -->
     <string name="permissions_required_error">%1$s required for the sample</string>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="foreground_service_notification">Übertrage Standortdaten zur Kamera</string>
+    <string name="scan_for_devices">Drücke Start um deine Kamera zu koppeln</string>
+    <string name="permission_gps">Zugriff auf genauen Standort</string>
+    <string name="permission_background_gps">Erlaube Zugriff auf Standort wenn die App im Hintergrund ist</string>
+    <string name="permission_bluetooth">Erlaube der App Bluetooth Verbindungen herzustellen</string>
+    <string name="permission_notifications">Erlaube der App Benachrichtigungen anzuzeigen</string>
+    <string name="step1_title">Schritt 1: Bluetooh und Standortzugriff</string>
+    <string name="step1_desc">Benötigt, damit eine Verbindung zur Kamera hergestellt werden kann und der Standort gesendet wird.</string>
+    <string name="step1_missing">Fehlende Berechtigungen:</string>
+    <string name="step1_grant">Erlaube Standort &amp; Bluetooth Zugriff</string>
+    <string name="step1_granted">&#10003; Freigegeben</string>
+    <string name="step2_title">Schritt 2: Erlaube Standortzugriff im Hintergrun</string>
+    <string name="step2_desc">Ermöglicht kontinuierliche Übertragung der Standortdaten, auch im Hintergrund.</string>
+    <string name="step2_android10_warning">Im nächsten Dialog musst du \"Immer erlauben\" auswählen, damit die App korrekt funktioniert.</string>
+    <string name="step2_grant">Erlaube Standortzugriff im Hintergrund.</string>
+    <string name="step2_granted">&#10003; Freigegeben</string>
+    <string name="view_logs">Zeige Logs</string>
+    <string name="camera_gps_permissions">Camera GPS Berechtigungen</string>
+    <string name="continue_button">Weiter</string>
+    <string name="dismiss_button">Beenden</string>
+    <string name="cancel_button">Abbrechen</string>
+    <string name="app_settings">App Einstellungen</string>
+    <string name="location_bluetooth_access_title">Standort &amp; Bluetooth Zugriff benötigt</string>
+    <string name="location_bluetooth_access_message">Diese App braucht Zugriff auf Standortdaten und Bluetooth um: • Connect to your Sony camera via Bluetooth • Standortzugriff zur Übertragung an die Kamera • Provide accurate location data for your photos</string>
+    <string name="grant_permissions_button">Berechtigungen erteilen</string>
+    <string name="background_location_access_title">Standortzugriff im Hintergrund</string>
+    <string name="background_location_required_error">Standortzugriff im Hintergrund wird benötigt, damit die App jederzeit die Koordinaten an die Kamera übertragen kann</string>
+</resources>
