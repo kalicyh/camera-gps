@@ -11,13 +11,11 @@ The Application collects information when you download and use it. This informat
 *   The time spent on the Application
 *   The operating system you use on your mobile device
 
-The Application does not gather precise information about the location of your mobile device.
+The Application does precise information about the location of your mobile device.
 
 The Application collects your device's location, which helps the Service Provider determine your approximate geographical location and make use of in below ways:
 
 *   Geolocation Services: The Service Provider utilizes location data to provide features such as location-based services.
-
-The Service Provider may use the information you provided to contact you from time to time to provide you with important information, required notices and marketing promotions.
 
 For a better experience, while using the Application, the Service Provider may require you to provide us with certain personally identifiable information. The information that the Service Provider request will be retained by them and used as described in this privacy policy.
 
