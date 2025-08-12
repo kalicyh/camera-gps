@@ -18,7 +18,6 @@ package com.saschl.cameragps.ui
 
 import android.Manifest
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.compose.animation.animateContentSize
@@ -52,7 +51,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.PermissionState
@@ -60,16 +61,6 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
-import kotlin.apply
-import kotlin.collections.filter
-import kotlin.collections.filterValues
-import kotlin.collections.isNotEmpty
-import kotlin.collections.joinToString
-import kotlin.collections.map
-import kotlin.collections.none
-import kotlin.text.isNotBlank
-import kotlin.text.removePrefix
-import androidx.core.net.toUri
 import com.saschl.cameragps.R
 
 /**
@@ -122,7 +113,10 @@ fun PermissionBox(
         errorText = if (rejectedPermissions.none { it in requiredPermissions }) {
             ""
         } else {
-            context.getString(R.string.permissions_required_error, rejectedPermissions.joinToString())
+            context.getString(
+                R.string.permissions_required_app_error,
+                rejectedPermissions.joinToString()
+            )
         }
     }
     val allRequiredPermissionsGranted =
@@ -151,7 +145,7 @@ fun PermissionBox(
                 errorText,
             )
 
-            FloatingActionButton(
+         /*   FloatingActionButton(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp),
@@ -163,8 +157,11 @@ fun PermissionBox(
                     context.startActivity(intent)
                 },
             ) {
-                Icon(imageVector = Icons.Rounded.Settings, contentDescription = stringResource(R.string.app_settings))
-            }
+                Icon(
+                    imageVector = Icons.Rounded.Settings,
+                    contentDescription = stringResource(R.string.app_settings)
+                )
+            }*/
         }
     }
 }
@@ -295,7 +292,10 @@ fun EnhancedLocationPermissionBox(
     ) { map ->
         val rejectedPermissions = map.filterValues { !it }.keys
         errorText = if (rejectedPermissions.isNotEmpty()) {
-            context.getString(R.string.permissions_required_app_error, rejectedPermissions.joinToString())
+            context.getString(
+                R.string.permissions_required_app_error,
+                rejectedPermissions.joinToString()
+            )
         } else {
             ""
         }
@@ -316,8 +316,7 @@ fun EnhancedLocationPermissionBox(
     val backgroundGranted = backgroundLocationPermission.status.isGranted
     val allPermissionsGranted = allForegroundGranted && backgroundGranted
 
-    Scaffold {
-        innerPadding ->
+    Scaffold { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -339,20 +338,20 @@ fun EnhancedLocationPermissionBox(
                     errorText = errorText
                 )
 
-                FloatingActionButton(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp),
-                    onClick = {
-                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                            data = "package:${context.packageName}".toUri()
-                        }
-                        context.startActivity(intent)
-                    },
-                ) {
-                    Icon(imageVector = Icons.Rounded.Settings, contentDescription = stringResource(R.string.app_settings))
-                }
+                /*         FloatingActionButton(
+                             modifier = Modifier
+                                 .align(Alignment.BottomEnd)
+                                 .padding(16.dp),
+                             onClick = {
+                                 val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                     data = "package:${context.packageName}".toUri()
+                                 }
+                                 context.startActivity(intent)
+                             },
+                         ) {
+                             Icon(imageVector = Icons.Rounded.Settings, contentDescription = stringResource(R.string.app_settings))
+                         }*/
             }
         }
     }
@@ -410,8 +409,11 @@ private fun EnhancedPermissionScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 if (!allForegroundGranted) {
-                    val revokedPermissions = foregroundPermissionState.revokedPermissions.map { it -> stringResource(getPermissionDescription(it.permission)) }
-                        .joinToString("\n") { " - $it" }
+                    val revokedPermissions =
+                        foregroundPermissionState.revokedPermissions.map { it ->
+                            stringResource(getPermissionDescription(it.permission))
+                        }
+                            .joinToString("\n") { " - $it" }
 
                     Text(
                         text = stringResource(R.string.step1_missing) + "\n" + revokedPermissions,
@@ -516,7 +518,12 @@ private fun EnhancedPermissionScreen(
             onDismissRequest = { showForegroundRationale = false },
             title = { Text(stringResource(R.string.location_bluetooth_access_title)) },
             text = {
-                Text(stringResource(R.string.location_bluetooth_access_message))
+                Column {
+                    Text(text = stringResource(R.string.location_bluetooth_access_message))
+                    Text(text = stringResource(R.string.location_bluetooth_benefit_1))
+                    Text(text = stringResource(R.string.location_bluetooth_benefit_2))
+                    Text(text = stringResource(R.string.location_bluetooth_benefit_3))
+                }
             },
             confirmButton = {
                 TextButton(
@@ -541,7 +548,13 @@ private fun EnhancedPermissionScreen(
             onDismissRequest = { showBackgroundRationale = false },
             title = { Text(stringResource(R.string.background_location_access_title)) },
             text = {
-                Text(stringResource(R.string.background_location_access_message))
+                Column {
+                    Text(text = stringResource(R.string.background_location_access_message))
+                    Text(text = stringResource(R.string.background_location_benefit_1))
+                    Text(text = stringResource(R.string.background_location_benefit_2))
+                    Text(text = stringResource(R.string.background_location_benefit_3))
+                    Text(fontWeight = FontWeight.Bold , text = stringResource(R.string.background_location_instruction))
+                }
             },
             confirmButton = {
                 TextButton(

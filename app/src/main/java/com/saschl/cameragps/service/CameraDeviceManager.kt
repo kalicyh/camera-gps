@@ -23,6 +23,7 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.companion.AssociationInfo
 import android.companion.AssociationRequest
@@ -109,13 +110,13 @@ fun CameraDeviceManager() {
 
                 }
             }
-        } else {
+        } /*else {
             EnhancedLocationPermissionBox {
                 ConnectDeviceScreen(device = selectedDevice!!) {
                     selectedDevice = null
                 }
             }
-        }
+        }*/
     }
 }
 
@@ -557,15 +558,32 @@ private fun ScanForDevicesMenu(
     // State for managing pairing after association
     var pendingPairingDevice by remember { mutableStateOf<AssociatedDeviceCompat?>(null) }
 
+    var assoicatedDevices by remember { mutableStateOf(deviceManager.getAssociatedDevices() )}
+
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult(),
     ) {
         when (it.resultCode) {
             CompanionDeviceManager.RESULT_OK -> {
                 it.data?.getAssociationResult()?.run {
+
                     // Device association successful, now check if pairing is needed
                     val bluetoothManager = context.getSystemService<BluetoothManager>()
                     val adapter = bluetoothManager?.adapter
+
+                  /*  if(assoicatedDevices.any { it -> it.address == this.address }) {
+                        Timber.i("Device ${this.name} already associated, skipping pairing")
+                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            // FIXME
+                            //deviceManager.disassociate(this.id)
+                        } else {
+                           // not sure what to do here
+                        }
+                       // onDeviceAssociated(this)
+                        return@run
+                    }
+                    assoicatedDevices + this*/
 
                     if (!isDevicePaired(adapter, this.address)) {
                         Timber.i("Device ${this.name} associated but not paired, initiating pairing")
@@ -646,7 +664,8 @@ private fun ScanForDevicesMenu(
                 modifier = Modifier.weight(0.7f),
                 onClick = {
                     scope.launch {
-                        val intentSender = requestDeviceAssociation(deviceManager)
+                        val associatedDevices = deviceManager.getAssociatedDevices()
+                        val intentSender = requestDeviceAssociation(deviceManager, associatedDevices)
                         launcher.launch(IntentSenderRequest.Builder(intentSender).build())
                     }
                 },
@@ -702,12 +721,12 @@ private fun AssociatedDevicesList(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    OutlinedButton(
+                 /*   OutlinedButton(
                         onClick = { onConnect(device) },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(text = "Connect")
-                    }
+                    }*/
                     OutlinedButton(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { onDisassociate(device) },
@@ -751,7 +770,10 @@ private fun Intent.getAssociationResult(): AssociatedDeviceCompat? {
 
 }
 
-private suspend fun requestDeviceAssociation(deviceManager: CompanionDeviceManager): IntentSender {
+private suspend fun requestDeviceAssociation(
+    deviceManager: CompanionDeviceManager,
+    associatedDevices: List<AssociatedDeviceCompat> = emptyList()
+): IntentSender {
     // Match only Bluetooth devices whose service UUID matches this pattern.
     // For this demo we will match our GATTServerSample
     val deviceFilter = BluetoothLeDeviceFilter.Builder()
@@ -787,6 +809,7 @@ private suspend fun requestDeviceAssociation(deviceManager: CompanionDeviceManag
             result.completeExceptionally(IllegalStateException(errorMessage?.toString().orEmpty()))
         }
     }
+
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val executor = Executor { it.run() }
         deviceManager.associate(pairingRequest, executor, callback)
@@ -796,4 +819,3 @@ private suspend fun requestDeviceAssociation(deviceManager: CompanionDeviceManag
 
     return result.await()
 }
-
