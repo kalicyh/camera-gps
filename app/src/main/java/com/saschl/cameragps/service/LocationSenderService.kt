@@ -23,14 +23,12 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.saschl.cameragps.notification.NotificationsHelper
-import com.saschl.cameragps.service.CompanionDeviceSampleService.DeviceNotificationManager
 import timber.log.Timber
 import java.nio.ByteBuffer
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.TimeZone
-import java.util.Timer
 import java.util.UUID
 
 class LocationSenderService : Service() {
@@ -46,8 +44,6 @@ class LocationSenderService : Service() {
 
     private var locationResultVar: Location = Location("")
 
-    private var shutdownTimer = Timer()
-
     private var startedManually: Boolean = false
 
     companion object {
@@ -57,9 +53,6 @@ class LocationSenderService : Service() {
 
         // Same as the service but for the characteristic
         val CHARACTERISTIC_UUID: UUID = UUID.fromString("0000dd11-0000-1000-8000-00805f9b34fb")
-
-
-        private const val CHANNEL = "gatt_server_channel"
     }
 
     private val bluetoothManager: BluetoothManager by lazy {
@@ -88,35 +81,15 @@ class LocationSenderService : Service() {
             //  currentOnStateChange(state)
 
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                // Here you should handle the error returned in status based on the constants
-                // https://developer.android.com/reference/android/bluetooth/BluetoothGatt#summary
-                // For example for GATT_INSUFFICIENT_ENCRYPTION or
-                // GATT_INSUFFICIENT_AUTHENTICATION you should create a bond.
-                // https://developer.android.com/reference/android/bluetooth/BluetoothDevice#createBond()
-
                 Timber.e("An error happened: $status")
                 fusedLocationClient.removeLocationUpdates(locationCallback)
 
 
-                shutdownTimer = Timer()
-                /* shutdownTimer.schedule(object : TimerTask() {
-                     override fun run() {
-
-                         Log.e("LocationSenderService", "Disconnecting and closing")
-                         gatt.disconnect()
-                         gatt.close()
-                         stopSelf(startId)
-                     }
-
-                 }, 120000)*/
 
                 if (startedManually && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     stopSelf()
                 }
             } else {
-                shutdownTimer.cancel()
-                shutdownTimer.purge()
-
                 Timber.i("Connected to device")
                 gatt.discoverServices()
 
@@ -235,8 +208,6 @@ class LocationSenderService : Service() {
     override fun onDestroy() {
         gatt1?.disconnect()
         gatt1?.close()
-        shutdownTimer.cancel()
-        shutdownTimer.purge()
         fusedLocationClient.removeLocationUpdates(locationCallback)
         super.onDestroy()
     }
@@ -340,7 +311,7 @@ class LocationSenderService : Service() {
 
 
         val hex = data.toHex()
-        Timber.i("Sending data: $hex with location $locationResultVar")
+       // Timber.i("Sending data: $hex with location $locationResultVar")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (characteristic != null) {
