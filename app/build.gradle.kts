@@ -13,8 +13,8 @@ android {
         applicationId = "com.saschl.cameragps"
         minSdk = 31
         targetSdk = 36
-        versionCode = 9
-        versionName = "v1.0.8"
+        versionCode = 12
+        versionName = "v1.0.10"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -26,8 +26,16 @@ android {
             storeFile = file("keystore.jks")
             storePassword = System.getenv("SIGNING_STORE_PASSWORD")
         }
+
+        create("release-local") {
+            keyAlias = "key0"
+            keyPassword = "changeme"
+            storeFile = file("android.jks")
+            storePassword = "changeme"
+        }
     }
 
+    ndkVersion = "29.0.13846066"
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -35,7 +43,19 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("release-local")
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
+
+        }
+
+        debug {
+
+            signingConfig = signingConfigs.getByName("release-local")
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
 
         }
     }

@@ -62,10 +62,6 @@ class LocationSenderService : Service() {
         private const val CHANNEL = "gatt_server_channel"
     }
 
-    private val notificationManager: DeviceNotificationManager by lazy {
-        DeviceNotificationManager(applicationContext)
-    }
-
     private val bluetoothManager: BluetoothManager by lazy {
         applicationContext.getSystemService()!!
     }
@@ -114,7 +110,7 @@ class LocationSenderService : Service() {
 
                  }, 120000)*/
 
-                if(startedManually) {
+                if (startedManually && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     stopSelf()
                 }
             } else {
@@ -145,8 +141,10 @@ class LocationSenderService : Service() {
             // If the GATTServerSample service is found, get the characteristic
             characteristic = service?.getCharacteristic(CHARACTERISTIC_UUID)
             fusedLocationClient.lastLocation.addOnSuccessListener {
-                locationResultVar = it
-                sendData(gatt, characteristic)
+                if(it != null) {
+                    locationResultVar = it
+                    sendData(gatt, characteristic)
+                }
             }
             fusedLocationClient.requestLocationUpdates(
                 LocationRequest.Builder(
