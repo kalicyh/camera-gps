@@ -28,9 +28,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+        //if(Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             enableEdgeToEdge()
-        }
+        //}
 
         if (Timber.treeCount == 0) {
             FileTree.initialize(this)
@@ -46,10 +46,10 @@ class MainActivity : ComponentActivity() {
             CameraGpsTheme {
                 CameraDeviceManager()
             }
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM && !isSystemInDarkTheme()) {
+           /* if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM && !isSystemInDarkTheme()) {
                 // WHYYYY
                 StatusBarProtection()
-            }
+            }*/
 
         }
 
