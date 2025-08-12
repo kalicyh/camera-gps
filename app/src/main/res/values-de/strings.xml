@@ -26,5 +26,10 @@
     <string name="location_bluetooth_access_message">Diese App braucht Zugriff auf Standortdaten und Bluetooth um: • Connect to your Sony camera via Bluetooth • Standortzugriff zur Übertragung an die Kamera • Provide accurate location data for your photos</string>
     <string name="grant_permissions_button">Berechtigungen erteilen</string>
     <string name="background_location_access_title">Standortzugriff im Hintergrund</string>
+    <string name="permissions_required_app_error">%1 wird benötigt, damit die App funktioniert</string>
     <string name="background_location_required_error">Standortzugriff im Hintergrund wird benötigt, damit die App jederzeit die Koordinaten an die Kamera übertragen kann</string>
+    <string name="background_location_benefit_2">• Standortermittlung, auch wen der Bildschirm ausgeschaltet ist</string>
+    <string name="background_location_benefit_3">• Nahtloses Geotagging von Fotos bei langen Sessions</string>
+    <string name="background_location_instruction">Bitte im nächsten Dialog \"Immer erlauben\" auswählen</string>
+    <string name="background_location_access_message">Standortzugriff im Hintergrund ermöglicht:</string>
 </resources>
