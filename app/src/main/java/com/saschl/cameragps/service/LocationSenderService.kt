@@ -190,7 +190,6 @@ class LocationSenderService : Service() {
            }*/
 
         device = bluetoothManager.adapter.getRemoteDevice(address)
-        Timber.i("ON START YEAH")
 
 
         if (gatt1 != null) {
