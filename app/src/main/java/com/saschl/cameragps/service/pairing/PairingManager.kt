@@ -173,7 +173,7 @@ private fun handlePairingConfirmation(
 /**
  * Starts device presence observation after successful pairing
  */
-private fun startDevicePresenceObservation(
+fun startDevicePresenceObservation(
     deviceManager: CompanionDeviceManager,
     device: AssociatedDeviceCompat
 ) {

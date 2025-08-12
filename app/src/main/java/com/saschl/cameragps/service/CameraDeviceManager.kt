@@ -19,10 +19,7 @@ package com.saschl.cameragps.service
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothDevice.TRANSPORT_AUTO
 import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattCallback
-import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
@@ -35,7 +32,6 @@ import android.companion.ObservingDevicePresenceRequest
 import android.content.Intent
 import android.content.IntentSender
 import android.os.Build
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -59,27 +55,19 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startForegroundService
 import androidx.core.content.getSystemService
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.saschl.cameragps.R
 import com.saschl.cameragps.service.CompanionDeviceSampleService.Companion.CHARACTERISTIC_UUID
 import com.saschl.cameragps.service.CompanionDeviceSampleService.Companion.SERVICE_UUID
@@ -89,20 +77,16 @@ import com.saschl.cameragps.service.pairing.PairingManager
 import com.saschl.cameragps.service.pairing.PairingState
 import com.saschl.cameragps.service.pairing.PairingTrigger
 import com.saschl.cameragps.service.pairing.isDevicePaired
+import com.saschl.cameragps.service.pairing.startDevicePresenceObservation
 import com.saschl.cameragps.ui.EnhancedLocationPermissionBox
 import com.saschl.cameragps.ui.LogViewerActivity
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.nio.ByteBuffer
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.util.Locale
 import java.util.concurrent.Executor
 import java.util.regex.Pattern
-import kotlin.random.Random
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -519,6 +503,7 @@ private fun DevicesScreen(
                 serviceIntent.putExtra("address", it.address.uppercase(Locale.getDefault()))
                 serviceIntent.putExtra("startedManually", true)
                 Timber.i("Starting LocationSenderService for address: $it.address")
+                startDevicePresenceObservation(deviceManager, it)
                 startForegroundService(context, serviceIntent)
 
             }
@@ -545,7 +530,8 @@ private fun DevicesScreen(
                             @Suppress("DEPRECATION")
                             deviceManager.disassociate(it.address)
                         }
-
+                        val serviceIntent = Intent(context.applicationContext, LocationSenderService::class.java)
+                        context.stopService(serviceIntent)
 
                         associatedDevices = deviceManager.getAssociatedDevices()
                     }
