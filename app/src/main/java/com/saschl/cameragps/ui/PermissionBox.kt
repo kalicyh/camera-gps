@@ -40,6 +40,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -315,42 +316,47 @@ fun EnhancedLocationPermissionBox(
     val backgroundGranted = backgroundLocationPermission.status.isGranted
     val allPermissionsGranted = allForegroundGranted && backgroundGranted
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .then(modifier),
-        contentAlignment = if (allPermissionsGranted) {
-            contentAlignment
-        } else {
-            Alignment.Center
-        },
-    ) {
-        if (allPermissionsGranted) {
-            onAllPermissionsGranted()
-        } else {
-            EnhancedPermissionScreen(
-                foregroundPermissionState = foregroundPermissionState,
-                backgroundLocationPermission = backgroundLocationPermission,
-                allForegroundGranted = allForegroundGranted,
-                errorText = errorText
-            )
+    Scaffold {
+        innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .then(modifier),
+            contentAlignment = if (allPermissionsGranted) {
+                contentAlignment
+            } else {
+                Alignment.Center
+            },
+        ) {
+            if (allPermissionsGranted) {
+                onAllPermissionsGranted()
+            } else {
+                EnhancedPermissionScreen(
+                    foregroundPermissionState = foregroundPermissionState,
+                    backgroundLocationPermission = backgroundLocationPermission,
+                    allForegroundGranted = allForegroundGranted,
+                    errorText = errorText
+                )
 
-            FloatingActionButton(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                onClick = {
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                        data = "package:${context.packageName}".toUri()
-                    }
-                    context.startActivity(intent)
-                },
-            ) {
-                Icon(imageVector = Icons.Rounded.Settings, contentDescription = stringResource(R.string.app_settings))
+                FloatingActionButton(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp),
+                    onClick = {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            data = "package:${context.packageName}".toUri()
+                        }
+                        context.startActivity(intent)
+                    },
+                ) {
+                    Icon(imageVector = Icons.Rounded.Settings, contentDescription = stringResource(R.string.app_settings))
+                }
             }
         }
     }
+
 }
 
 @OptIn(ExperimentalPermissionsApi::class)
