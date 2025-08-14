@@ -23,7 +23,6 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
-import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.companion.AssociationInfo
 import android.companion.AssociationRequest
@@ -39,6 +38,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -49,10 +49,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -63,9 +65,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startForegroundService
 import androidx.core.content.getSystemService
@@ -94,29 +97,71 @@ import java.util.regex.Pattern
 fun CameraDeviceManager() {
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val deviceManager = context.getSystemService<CompanionDeviceManager>()
     val adapter = context.getSystemService<BluetoothManager>()?.adapter
     var selectedDevice by remember {
         mutableStateOf<BluetoothDevice?>(null)
+    }
+
+    var associatedDevices by remember {
+        // If we already associated the device no need to do it again.
+        mutableStateOf(deviceManager!!.getAssociatedDevices())
     }
     if (deviceManager == null || adapter == null) {
         Text(text = "No Companion device manager found. The device does not support it.")
     } else {
         if (selectedDevice == null) {
             EnhancedLocationPermissionBox {
-                DevicesScreen(deviceManager) { device ->
-                    selectedDevice =
-                        (device.device ?: adapter.getRemoteDevice(device.address))
+                DevicesScreen(
+                    deviceManager,
+                    onDeviceAssociated = { associatedDevices = associatedDevices + it },
+                    onConnect = { device ->
+                        selectedDevice =
+                            (device.device ?: adapter.getRemoteDevice(device.address))
 
-                }
+                    },
+                    associatedDevices = associatedDevices
+                )
             }
-        } /*else {
+        } else {
             EnhancedLocationPermissionBox {
-                ConnectDeviceScreen(device = selectedDevice!!) {
-                    selectedDevice = null
-                }
+                DeviceDetailScreen(device = selectedDevice!!, onDisassociate = {
+                    associatedDevices.find { ass -> ass.address == it.address }?.let {
+                        Timber.i("Disassociating device: ${it.name} (${it.address})")
+                        scope.launch {
+
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                                deviceManager.stopObservingDevicePresence(
+                                    ObservingDevicePresenceRequest.Builder().setAssociationId(it.id)
+                                        .build()
+                                )
+
+                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                @Suppress("DEPRECATION")
+                                deviceManager.stopObservingDevicePresence(it.address)
+                            }
+
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                deviceManager.disassociate(it.id)
+                            } else {
+                                @Suppress("DEPRECATION")
+                                deviceManager.disassociate(it.address)
+                            }
+                            val serviceIntent = Intent(
+                                context.applicationContext,
+                                LocationSenderService::class.java
+                            )
+                            context.stopService(serviceIntent)
+
+                            associatedDevices = deviceManager.getAssociatedDevices()
+                        }
+                        selectedDevice = null
+                    }
+                }, onClose = { selectedDevice = null })
+
             }
-        }*/
+        }
     }
 }
 
@@ -316,25 +361,25 @@ fun ConnectDeviceScreen(device: BluetoothDevice, onClose: () -> Unit) {
         )
     }
 
-/*    // This effect will handle the connection and notify when the state changes
-    BLEConnectEffect(device = device) {
-        // update our state to recompose the UI
-        state = it
+    /*    // This effect will handle the connection and notify when the state changes
+        BLEConnectEffect(device = device) {
+            // update our state to recompose the UI
+            state = it
 
-        // If we get authentication/encryption errors, try to pair the device
-        if (it.gatt != null) {
-            // Check if we need to pair the device
-            val adapter = context.getSystemService<BluetoothManager>()?.adapter
-            if (!isDevicePaired(
-                    adapter,
-                    device.address
-                ) && pairingState.state != PairingState.PAIRING
-            ) {
-                Timber.i("Device not paired, showing pairing dialog")
-                showPairingDialog = true
+            // If we get authentication/encryption errors, try to pair the device
+            if (it.gatt != null) {
+                // Check if we need to pair the device
+                val adapter = context.getSystemService<BluetoothManager>()?.adapter
+                if (!isDevicePaired(
+                        adapter,
+                        device.address
+                    ) && pairingState.state != PairingState.PAIRING
+                ) {
+                    Timber.i("Device not paired, showing pairing dialog")
+                    showPairingDialog = true
+                }
             }
-        }
-    }*/
+        }*/
 
     Column(
         modifier = Modifier
@@ -394,15 +439,15 @@ fun ConnectDeviceScreen(device: BluetoothDevice, onClose: () -> Unit) {
         }
         Button(
             onClick = {
-              /*  scope.launch(Dispatchers.IO) {
-                    if (state?.connectionState == BluetoothProfile.STATE_DISCONNECTED) {
-                        //      state?.gatt?.connect()
-                    }
-                    // Example on how to request specific MTUs
-                    // Note that from Android 14 onwards the system will define a default MTU and
-                    // it will only be sent once to the peripheral device
-                    state?.gatt?.requestMtu(Random.nextInt(27, 190))
-                }*/
+                /*  scope.launch(Dispatchers.IO) {
+                      if (state?.connectionState == BluetoothProfile.STATE_DISCONNECTED) {
+                          //      state?.gatt?.connect()
+                      }
+                      // Example on how to request specific MTUs
+                      // Note that from Android 14 onwards the system will define a default MTU and
+                      // it will only be sent once to the peripheral device
+                      state?.gatt?.requestMtu(Random.nextInt(27, 190))
+                  }*/
             },
         ) {
             Text(text = "Request MTU")
@@ -447,41 +492,41 @@ fun ConnectDeviceScreen(device: BluetoothDevice, onClose: () -> Unit) {
 @Composable
 private fun DevicesScreen(
     deviceManager: CompanionDeviceManager,
+    associatedDevices: List<AssociatedDeviceCompat>,
+    onDeviceAssociated: (AssociatedDeviceCompat) -> Unit,
     onConnect: (AssociatedDeviceCompat) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    var associatedDevices by remember {
-        // If we already associated the device no need to do it again.
-        mutableStateOf(deviceManager.getAssociatedDevices())
-    }
 
-/*    // Simplified pairing management using the new PairingManager
-    var currentPairingDevice by remember { mutableStateOf<AssociatedDeviceCompat?>(null) }
 
-    LaunchedEffect(associatedDevices) {
-        associatedDevices.forEach { device ->
-            scope.launch {
-                val bluetoothManager = context.getSystemService<BluetoothManager>()
-                val adapter = bluetoothManager?.adapter
+    /*    // Simplified pairing management using the new PairingManager
+        var currentPairingDevice by remember { mutableStateOf<AssociatedDeviceCompat?>(null) }
 
-                if (!isDevicePaired(adapter, device.address)) {
-                    Timber.i("Device ${device.name} not paired, will show pairing dialog")
-                } else {
-                    Timber.i("Device ${device.name} is already paired")
+        LaunchedEffect(associatedDevices) {
+            associatedDevices.forEach { device ->
+                scope.launch {
+                    val bluetoothManager = context.getSystemService<BluetoothManager>()
+                    val adapter = bluetoothManager?.adapter
+
+                    if (!isDevicePaired(adapter, device.address)) {
+                        Timber.i("Device ${device.name} not paired, will show pairing dialog")
+                    } else {
+                        Timber.i("Device ${device.name} is already paired")
+                    }
                 }
             }
-        }
-    }*/
+        }*/
 
     Scaffold(
         topBar = {
             Text(
                 text = stringResource(R.string.app_name_ui),
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(32.dp),
+                modifier = Modifier.padding(30.dp),
             )
         }) { innerPadding ->
+
 
         Column(
             modifier = Modifier
@@ -499,8 +544,9 @@ private fun DevicesScreen(
                 )
             }) { Text(text = stringResource(R.string.view_logs)) }
             ScanForDevicesMenu(deviceManager, associatedDevices) {
-                associatedDevices = associatedDevices + it
-                val serviceIntent = Intent(context.applicationContext, LocationSenderService::class.java)
+                onDeviceAssociated(it)
+                val serviceIntent =
+                    Intent(context.applicationContext, LocationSenderService::class.java)
                 serviceIntent.putExtra("address", it.address.uppercase(Locale.getDefault()))
                 serviceIntent.putExtra("startedManually", true)
                 Timber.i("Starting LocationSenderService for address: $it.address")
@@ -510,33 +556,7 @@ private fun DevicesScreen(
             }
             AssociatedDevicesList(
                 associatedDevices = associatedDevices,
-                onConnect = onConnect,
-                onDisassociate = {
-                    scope.launch {
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                            deviceManager.stopObservingDevicePresence(
-                                ObservingDevicePresenceRequest.Builder().setAssociationId(it.id)
-                                    .build()
-                            )
-
-                        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            @Suppress("DEPRECATION")
-                            deviceManager.stopObservingDevicePresence(it.address)
-                        }
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            deviceManager.disassociate(it.id)
-                        } else {
-                            @Suppress("DEPRECATION")
-                            deviceManager.disassociate(it.address)
-                        }
-                        val serviceIntent = Intent(context.applicationContext, LocationSenderService::class.java)
-                        context.stopService(serviceIntent)
-
-                        associatedDevices = deviceManager.getAssociatedDevices()
-                    }
-                },
+                onConnect = onConnect
             )
         }
     }
@@ -571,21 +591,21 @@ private fun ScanForDevicesMenu(
                     val bluetoothManager = context.getSystemService<BluetoothManager>()
                     val adapter = bluetoothManager?.adapter
 
-                    if(associatedDevices.any { it -> it.address == this.address }) {
-                        Timber.i("Device ${this.name} already associated, skipping pairing")
-                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            deviceManager.disassociate(this.id)
-                            errorMessage = "The device is already associated."
-                        } else {
-                           // Android 12 can only disassociate by address, but that will probably also delete the existing association
-                            @Suppress("DEPRECATION")
-                            deviceManager.disassociate(this.address)
-                            errorMessage = "The device was already associated. The association was removed to prevent duplicates. Please try again."
+                    /*          if(associatedDevices.any { it -> it.address == this.address }) {
+                                  Timber.i("Device ${this.name} already associated, skipping pairing")
+                                  if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                      deviceManager.disassociate(this.id)
+                                      errorMessage = "The device is already associated."
+                                  } else {
+                                     // Android 12 can only disassociate by address, but that will probably also delete the existing association
+                                      @Suppress("DEPRECATION")
+                                      deviceManager.disassociate(this.address)
+                                      errorMessage = "The device was already associated. The association was removed to prevent duplicates. Please try again."
 
-                        }
-                        return@run
-                    }
-
+                                  }
+                                  return@run
+                              }
+          */
                     if (!isDevicePaired(adapter, this.address)) {
                         Timber.i("Device ${this.name} associated but not paired, initiating pairing")
                         pendingPairingDevice = this
@@ -667,7 +687,8 @@ private fun ScanForDevicesMenu(
                 onClick = {
                     scope.launch {
                         val associatedDevices = deviceManager.getAssociatedDevices()
-                        val intentSender = requestDeviceAssociation(deviceManager, associatedDevices)
+                        val intentSender =
+                            requestDeviceAssociation(deviceManager, associatedDevices)
                         launcher.launch(IntentSenderRequest.Builder(intentSender).build())
                     }
                 },
@@ -686,61 +707,124 @@ private fun ScanForDevicesMenu(
 private fun AssociatedDevicesList(
     associatedDevices: List<AssociatedDeviceCompat>,
     onConnect: (AssociatedDeviceCompat) -> Unit,
-    onDisassociate: (AssociatedDeviceCompat) -> Unit,
+    //  onDisassociate: (AssociatedDeviceCompat) -> Unit,
 ) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        stickyHeader {
-            Text(
-                text = "Associated Devices:",
-                modifier = Modifier.padding(vertical = 8.dp),
-                style = MaterialTheme.typography.titleMedium,
-            )
-        }
-        items(associatedDevices) { device ->
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
+    Column {
+
+
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            stickyHeader {
+                Text(
+                    text = "Associated Devices:",
+                    modifier = Modifier.padding(8.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+            items(associatedDevices) { device ->
+                Row(
                     Modifier
                         .fillMaxWidth()
-                        .weight(1f),
-                ) {
-                    Text(text = "ID: ${device.id}")
-                    Text(text = "MAC: ${device.address}")
-                    Text(text = "Name: ${device.name}")
-                }
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(0.8f),
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                 /*   OutlinedButton(
-                        onClick = { onConnect(device) },
-                        modifier = Modifier.fillMaxWidth(),
+                        .padding(24.dp)
+                        .clickable(true, onClick = { onConnect(device) }),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+
                     ) {
-                        Text(text = "Connect")
-                    }*/
-                    OutlinedButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = { onDisassociate(device) },
-                        border = ButtonDefaults.outlinedButtonBorder().copy(
-                            brush = SolidColor(MaterialTheme.colorScheme.error),
-                        ),
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(0.2f),
                     ) {
-                        Text(text = stringResource(R.string.remove), color = MaterialTheme.colorScheme.error)
+                        Icon(
+                            painterResource(R.drawable.baseline_photo_camera_24),
+                            contentDescription = "Device Icon"
+                        )
                     }
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                    ) {
+                        Text(fontWeight = FontWeight.Bold, text = device.name)
+                    }
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(0.8f),
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = "Hi"
+                        )
+
+                    }
+
                 }
+                HorizontalDivider(
+                    modifier = Modifier.padding(top = 2.dp),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outline
+                )
             }
         }
+        // FIXME pairing logic needs to be refactored so that it can be used here as well
+        /* Row(
+             Modifier
+                 .fillMaxWidth()
+                 *//* .background(color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(16.dp))*//*
+                *//* .border(
+                    width = 2.dp,
+                    color = MaterialTheme.colorScheme.outline,
+                    shape = RoundedCornerShape(16.dp)
+                )*//*.padding(24.dp)
+                .clickable(true, onClick = {  }),
+
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+
+            ) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .weight(0.2f),
+            ) {
+                Icon(
+                    painterResource(R.drawable.outline_add_circle_24),
+                    contentDescription = "Device Icon"
+                )
+
+            }
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            ) {
+                Text(fontWeight = FontWeight.Bold, text = "Pair new camera")
+            }
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .weight(0.8f),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                *//* IconButton(onClick = {onConnect(device)}) {*//*
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Hi")
+                *//*   }*//*
+                *//*   OutlinedButton(
+                    onClick = { onConnect(device) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(text = "Connect")
+                }*//*
+
+            }
+        }*/
     }
 }
 
