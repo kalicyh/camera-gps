@@ -591,21 +591,21 @@ private fun ScanForDevicesMenu(
                     val bluetoothManager = context.getSystemService<BluetoothManager>()
                     val adapter = bluetoothManager?.adapter
 
-                    /*          if(associatedDevices.any { it -> it.address == this.address }) {
-                                  Timber.i("Device ${this.name} already associated, skipping pairing")
-                                  if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                      deviceManager.disassociate(this.id)
-                                      errorMessage = "The device is already associated."
-                                  } else {
-                                     // Android 12 can only disassociate by address, but that will probably also delete the existing association
-                                      @Suppress("DEPRECATION")
-                                      deviceManager.disassociate(this.address)
-                                      errorMessage = "The device was already associated. The association was removed to prevent duplicates. Please try again."
+                    if (associatedDevices.any { it -> it.address == this.address }) {
+                        Timber.i("Device ${this.name} already associated, skipping pairing")
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            deviceManager.disassociate(this.id)
+                            errorMessage = "The device is already associated."
+                        } else {
+                            // Android 12 can only disassociate by address, but that will probably also delete the existing association
+                            @Suppress("DEPRECATION")
+                            deviceManager.disassociate(this.address)
+                            errorMessage =
+                                "The device was already associated. The association was removed to prevent duplicates. Please try again."
 
-                                  }
-                                  return@run
-                              }
-          */
+                        }
+                        return@run
+                    }
                     if (!isDevicePaired(adapter, this.address)) {
                         Timber.i("Device ${this.name} associated but not paired, initiating pairing")
                         pendingPairingDevice = this
