@@ -498,7 +498,7 @@ private fun DevicesScreen(
                     )
                 )
             }) { Text(text = stringResource(R.string.view_logs)) }
-            ScanForDevicesMenu(deviceManager) {
+            ScanForDevicesMenu(deviceManager, associatedDevices) {
                 associatedDevices = associatedDevices + it
                 val serviceIntent = Intent(context.applicationContext, LocationSenderService::class.java)
                 serviceIntent.putExtra("address", it.address.uppercase(Locale.getDefault()))
@@ -547,6 +547,7 @@ private fun DevicesScreen(
 @Composable
 private fun ScanForDevicesMenu(
     deviceManager: CompanionDeviceManager,
+    associatedDevices: List<AssociatedDeviceCompat>,
     onDeviceAssociated: (AssociatedDeviceCompat) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -557,8 +558,6 @@ private fun ScanForDevicesMenu(
 
     // State for managing pairing after association
     var pendingPairingDevice by remember { mutableStateOf<AssociatedDeviceCompat?>(null) }
-
-    var assoicatedDevices by remember { mutableStateOf(deviceManager.getAssociatedDevices() )}
 
 
     val launcher = rememberLauncherForActivityResult(
@@ -572,18 +571,20 @@ private fun ScanForDevicesMenu(
                     val bluetoothManager = context.getSystemService<BluetoothManager>()
                     val adapter = bluetoothManager?.adapter
 
-                  /*  if(assoicatedDevices.any { it -> it.address == this.address }) {
+                    if(associatedDevices.any { it -> it.address == this.address }) {
                         Timber.i("Device ${this.name} already associated, skipping pairing")
                         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            // FIXME
-                            //deviceManager.disassociate(this.id)
+                            deviceManager.disassociate(this.id)
+                            errorMessage = "The device is already associated."
                         } else {
-                           // not sure what to do here
+                           // Android 12 can only disassociate by address, but that will probably also delete the existing association
+                            @Suppress("DEPRECATION")
+                            deviceManager.disassociate(this.address)
+                            errorMessage = "The device was already associated. The association was removed to prevent duplicates. Please try again."
+
                         }
-                       // onDeviceAssociated(this)
                         return@run
                     }
-                    assoicatedDevices + this*/
 
                     if (!isDevicePaired(adapter, this.address)) {
                         Timber.i("Device ${this.name} associated but not paired, initiating pairing")
@@ -592,6 +593,7 @@ private fun ScanForDevicesMenu(
                         Timber.i("Device ${this.name} already paired, completing association")
                         onDeviceAssociated(this)
                     }
+                    errorMessage = ""
                 }
             }
 
@@ -734,7 +736,7 @@ private fun AssociatedDevicesList(
                             brush = SolidColor(MaterialTheme.colorScheme.error),
                         ),
                     ) {
-                        Text(text = "Disassociate", color = MaterialTheme.colorScheme.error)
+                        Text(text = stringResource(R.string.remove), color = MaterialTheme.colorScheme.error)
                     }
                 }
             }

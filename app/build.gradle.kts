@@ -39,15 +39,6 @@ android {
 
 
         }
-
-        debug {
-
-            signingConfig = signingConfigs.getByName("release")
-            ndk {
-                debugSymbolLevel = "FULL"
-            }
-
-        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
