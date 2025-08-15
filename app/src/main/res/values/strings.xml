@@ -49,4 +49,10 @@
     <string name="permissions_required_app_error">%s is required for the app to function</string>
     <string name="background_location_required_error">Background location access required for continuous GPS sync when app is not in foreground</string>
     <string name="remove">Remove</string>
+    <string name="not_paired_tap_to_pair_again">Not paired, tap device to pair again</string>
+    <string name="to_pair_with_your_camera_please">To pair with your camera \'%1$s\', please:</string>
+    <string name="_1_turn_on_your_camera">\n1. Turn on your camera</string>
+    <string name="_2_go_to_camera_settings_and_enable_bluetooth_pairing_mode">2. Go to camera settings and enable Bluetooth/Pairing mode</string>
+    <string name="_3_make_sure_the_camera_is_discoverable">3. Make sure the camera is discoverable</string>
+    <string name="once_your_camera_is_ready_tap_continue_to_start_pairing">\nOnce your camera is ready, tap \'Continue\' to start pairing.</string>
 </resources>

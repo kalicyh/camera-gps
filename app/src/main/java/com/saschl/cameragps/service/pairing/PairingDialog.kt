@@ -29,60 +29,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-
-@Composable
-fun PairingConfirmationDialog(
-    deviceName: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Camera Pairing Required",
-                style = MaterialTheme.typography.headlineSmall
-            )
-        },
-        text = {
-            Column {
-                Text(
-                    text = "To pair with your camera '$deviceName', please:",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "\n1. Turn on your camera",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "2. Go to camera settings and enable Bluetooth/Pairing mode",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "3. Make sure the camera is discoverable",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "\nOnce your camera is ready, tap 'Continue' to start pairing.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text("Continue")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
+import com.saschl.cameragps.R
 
 @Composable
 fun PairingConfirmationDialogWithLoading(
@@ -114,7 +64,9 @@ fun PairingConfirmationDialogWithLoading(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxWidth().padding(16.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
                         ) {
                             CircularProgressIndicator(
                                 modifier = Modifier.padding(end = 16.dp),
@@ -149,23 +101,26 @@ fun PairingConfirmationDialogWithLoading(
                     else -> {
                         // Show initial instructions
                         Text(
-                            text = "To pair with your camera '$deviceName', please:",
+                            text = stringResource(
+                                R.string.to_pair_with_your_camera_please,
+                                deviceName
+                            ),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            text = "\n1. Turn on your camera",
+                            text = stringResource(R.string._1_turn_on_your_camera),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            text = "2. Go to camera settings and enable Bluetooth/Pairing mode",
+                            text = stringResource(R.string._2_go_to_camera_settings_and_enable_bluetooth_pairing_mode),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            text = "3. Make sure the camera is discoverable",
+                            text = stringResource(R.string._3_make_sure_the_camera_is_discoverable),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            text = "\nOnce your camera is ready, tap 'Continue' to start pairing.",
+                            text = stringResource(R.string.once_your_camera_is_ready_tap_continue_to_start_pairing),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary
                         )

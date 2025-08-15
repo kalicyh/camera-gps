@@ -42,17 +42,6 @@ import java.util.UUID
 
 class CompanionDeviceSampleService : CompanionDeviceService() {
 
-    companion object {
-
-        // Random UUID for our service known between the client and server to allow communication
-        val SERVICE_UUID: UUID = UUID.fromString("8000dd00-dd00-ffff-ffff-ffffffffffff")
-
-        // Same as the service but for the characteristic
-        val CHARACTERISTIC_UUID: UUID = UUID.fromString("0000dd11-0000-1000-8000-00805f9b34fb")
-
-    }
-
-
     private fun startLocationSenderService(address: String?) {
         val serviceIntent = Intent(this, LocationSenderService::class.java)
         serviceIntent.putExtra("address", address?.uppercase(Locale.getDefault()))
@@ -71,22 +60,11 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
         startLocationSenderService(address)
     }
 
-    /*    @SuppressLint("MissingPermission")
-        @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
-        override fun onDeviceDisappeared(address: String) {
-            super.onDeviceDisappeared(address)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU || missingPermissions()) {
-                return
-            }
-
-            notificationManager.onDeviceDisappeared(address)
-        }*/
-
+   /* @Deprecated("Deprecated in Java")
     @SuppressLint("MissingPermission")
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onDeviceAppeared(associationInfo: AssociationInfo) {
         super.onDeviceAppeared(associationInfo)
-        if (missingPermissions()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU || missingPermissions()) {
             return
         }
 
@@ -94,7 +72,7 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
 
         startLocationSenderService(address)
 
-    }
+    }*/
 
 
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)

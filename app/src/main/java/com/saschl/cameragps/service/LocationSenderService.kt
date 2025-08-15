@@ -214,6 +214,14 @@ class LocationSenderService : Service() {
     @SuppressLint("MissingPermission")
     override fun onCreate() {
         super.onCreate()
+        if (Timber.treeCount == 0) {
+            FileTree.initialize(this)
+            Timber.plant(Timber.DebugTree(), FileTree(this))
+
+            // Set up global exception handler to log crashes
+            val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+            Thread.setDefaultUncaughtExceptionHandler(GlobalExceptionHandler(defaultHandler))
+        }
         /* if (missingPermissions()) {
              Log.e(CompanionDeviceSampleService::class.java.toString(),"aaa");
              return

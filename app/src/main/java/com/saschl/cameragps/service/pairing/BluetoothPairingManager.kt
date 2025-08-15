@@ -39,7 +39,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import timber.log.Timber
 import java.util.Locale
 
-@RequiresPermission(allOf = [Manifest.permission.BLUETOOTH_CONNECT])
+@RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
 fun isDevicePaired(adapter: BluetoothAdapter?, deviceAddress: String): Boolean {
     return adapter?.bondedDevices?.any {
         it.address == deviceAddress.uppercase(Locale.getDefault())

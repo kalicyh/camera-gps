@@ -58,6 +58,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,20 +74,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.startForegroundService
 import androidx.core.content.getSystemService
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.saschl.cameragps.R
-import com.saschl.cameragps.service.CompanionDeviceSampleService.Companion.CHARACTERISTIC_UUID
-import com.saschl.cameragps.service.CompanionDeviceSampleService.Companion.SERVICE_UUID
-import com.saschl.cameragps.service.pairing.BluetoothPairingEffect
-import com.saschl.cameragps.service.pairing.BluetoothPairingState
 import com.saschl.cameragps.service.pairing.PairingManager
-import com.saschl.cameragps.service.pairing.PairingState
-import com.saschl.cameragps.service.pairing.PairingTrigger
 import com.saschl.cameragps.service.pairing.isDevicePaired
 import com.saschl.cameragps.service.pairing.startDevicePresenceObservation
 import com.saschl.cameragps.ui.EnhancedLocationPermissionBox
 import com.saschl.cameragps.ui.LogViewerActivity
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.Locale
@@ -104,10 +101,32 @@ fun CameraDeviceManager() {
         mutableStateOf<BluetoothDevice?>(null)
     }
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
+
+
     var associatedDevices by remember {
         // If we already associated the device no need to do it again.
         mutableStateOf(deviceManager!!.getAssociatedDevices())
     }
+
+
+
+    LaunchedEffect(lifecycleState) {
+        // Do something with your state
+        // You may want to use DisposableEffect or other alternatives
+        // instead of LaunchedEffect
+        when (lifecycleState) {
+            Lifecycle.State.DESTROYED -> {}
+            Lifecycle.State.INITIALIZED -> {}
+            Lifecycle.State.CREATED -> {}
+            Lifecycle.State.STARTED -> {}
+            Lifecycle.State.RESUMED -> {
+            associatedDevices = deviceManager!!.getAssociatedDevices()}
+        }
+        }
+
+
     if (deviceManager == null || adapter == null) {
         Text(text = "No Companion device manager found. The device does not support it.")
     } else {
@@ -115,7 +134,7 @@ fun CameraDeviceManager() {
             EnhancedLocationPermissionBox {
                 DevicesScreen(
                     deviceManager,
-                    onDeviceAssociated = { associatedDevices = associatedDevices + it },
+                    onDeviceAssociated = { associatedDevices = associatedDevices.filter { associatedDevice -> associatedDevice != it }; it.isPaired = true; associatedDevices = associatedDevices + it },
                     onConnect = { device ->
                         selectedDevice =
                             (device.device ?: adapter.getRemoteDevice(device.address))
@@ -312,182 +331,6 @@ internal fun Int.toConnectionStateString() = when (this) {
 }
 
 
-@RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-@Composable
-fun ConnectDeviceScreen(device: BluetoothDevice, onClose: () -> Unit) {
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-
-    // Keeps track of the last connection state with the device
-    var state by remember(device) {
-        mutableStateOf<DeviceConnectionState?>(null)
-    }
-
-    // Track Bluetooth pairing state using the centralized pairing system
-    var pairingState by remember(device) {
-        mutableStateOf(BluetoothPairingState())
-    }
-
-    // Show pairing dialog if device is not paired
-    var showPairingDialog by remember(device) { mutableStateOf(false) }
-
-    // Once the device services are discovered find the GATTServerSample service
-    val service by remember(state) {
-        mutableStateOf(state?.services?.find { it.uuid == SERVICE_UUID })
-    }
-    // If the GATTServerSample service is found, get the characteristic
-    val characteristic by remember(service) {
-        mutableStateOf(service?.getCharacteristic(CHARACTERISTIC_UUID))
-    }
-
-    // Handle Bluetooth pairing using the centralized pairing system
-    BluetoothPairingEffect(
-        device = device,
-        onPairingStateChange = { newPairingState ->
-            pairingState = newPairingState
-        }
-    )
-
-    // Show pairing trigger when needed
-    if (showPairingDialog) {
-        PairingTrigger(
-            device = device,
-            onPairingStateChange = { newPairingState ->
-                pairingState = newPairingState
-                if (newPairingState.state == PairingState.PAIRED) {
-                    showPairingDialog = false
-                }
-            }
-        )
-    }
-
-    /*    // This effect will handle the connection and notify when the state changes
-        BLEConnectEffect(device = device) {
-            // update our state to recompose the UI
-            state = it
-
-            // If we get authentication/encryption errors, try to pair the device
-            if (it.gatt != null) {
-                // Check if we need to pair the device
-                val adapter = context.getSystemService<BluetoothManager>()?.adapter
-                if (!isDevicePaired(
-                        adapter,
-                        device.address
-                    ) && pairingState.state != PairingState.PAIRING
-                ) {
-                    Timber.i("Device not paired, showing pairing dialog")
-                    showPairingDialog = true
-                }
-            }
-        }*/
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(text = "Device Details", style = MaterialTheme.typography.headlineSmall)
-        Text(text = "Name: ${device.name} (${device.address})")
-
-        // Show pairing status using centralized state
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = "Pairing Status:")
-            Text(
-                text = when (pairingState.state) {
-                    PairingState.NOT_PAIRED -> "Not Paired"
-                    PairingState.PAIRING -> "Pairing..."
-                    PairingState.PAIRED -> "Paired ✓"
-                    PairingState.PAIRING_FAILED -> "Failed"
-                },
-                color = when (pairingState.state) {
-                    PairingState.PAIRED -> MaterialTheme.colorScheme.primary
-                    PairingState.PAIRING_FAILED -> MaterialTheme.colorScheme.error
-                    else -> MaterialTheme.colorScheme.onSurface
-                }
-            )
-        }
-
-        // Show pairing error if any
-        pairingState.errorMessage?.let { error ->
-            Text(
-                text = "Pairing Error: $error",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-
-        Text(text = "Connection Status: ${state?.connectionState?.toConnectionStateString()}")
-        Text(text = "MTU: ${state?.mtu}")
-        Text(text = "Services: ${state?.services?.joinToString { it.uuid.toString() + " " + it.type }}")
-        Text(text = "Message sent: ${state?.messageSent}")
-        Text(text = "Message received: ${state?.messageReceived}")
-
-        // Manual pairing button using centralized pairing
-        Button(
-            enabled = pairingState.state == PairingState.NOT_PAIRED || pairingState.state == PairingState.PAIRING_FAILED,
-            onClick = {
-                showPairingDialog = true
-            },
-        ) {
-            Text(text = if (pairingState.state == PairingState.PAIRING) "Pairing..." else "Pair Device")
-        }
-        Button(
-            onClick = {
-                /*  scope.launch(Dispatchers.IO) {
-                      if (state?.connectionState == BluetoothProfile.STATE_DISCONNECTED) {
-                          //      state?.gatt?.connect()
-                      }
-                      // Example on how to request specific MTUs
-                      // Note that from Android 14 onwards the system will define a default MTU and
-                      // it will only be sent once to the peripheral device
-                      state?.gatt?.requestMtu(Random.nextInt(27, 190))
-                  }*/
-            },
-        ) {
-            Text(text = "Request MTU")
-        }
-        Button(
-            enabled = state?.gatt != null,
-            onClick = {
-                scope.launch(Dispatchers.IO) {
-                    // Once we have the connection discover the peripheral services
-                    state?.gatt?.discoverServices()
-                }
-            },
-        ) {
-            Text(text = "Discover")
-        }
-        Button(
-            enabled = state?.gatt != null && characteristic != null,
-            onClick = {
-
-            },
-        ) {
-            Text(text = "Write to server")
-        }
-        Button(
-            enabled = state?.gatt != null && characteristic != null,
-            onClick = {
-                scope.launch(Dispatchers.IO) {
-                    state?.gatt?.readCharacteristic(characteristic)
-                }
-            },
-        ) {
-            Text(text = "Read characteristic")
-        }
-        Button(onClick = onClose) {
-            Text(text = "Close")
-        }
-    }
-}
-
-
 @SuppressLint("MissingPermission")
 @Composable
 private fun DevicesScreen(
@@ -498,6 +341,10 @@ private fun DevicesScreen(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+
+    // State for managing pairing after association
+    var pendingPairingDevice by remember { mutableStateOf<AssociatedDeviceCompat?>(null) }
 
 
     /*    // Simplified pairing management using the new PairingManager
@@ -543,7 +390,11 @@ private fun DevicesScreen(
                     )
                 )
             }) { Text(text = stringResource(R.string.view_logs)) }
-            ScanForDevicesMenu(deviceManager, associatedDevices) {
+            ScanForDevicesMenu(
+                deviceManager,
+                associatedDevices,
+                onSetPairingDevice = { device -> pendingPairingDevice = device })
+            {
                 onDeviceAssociated(it)
                 val serviceIntent =
                     Intent(context.applicationContext, LocationSenderService::class.java)
@@ -556,8 +407,40 @@ private fun DevicesScreen(
             }
             AssociatedDevicesList(
                 associatedDevices = associatedDevices,
-                onConnect = onConnect
+                deviceManager,
+                onConnect = onConnect,
+                onSetPendingPairingDevice = { device ->
+                    pendingPairingDevice = device
+                }
             )
+            // Handle pairing for newly associated device
+            pendingPairingDevice?.let { device ->
+                PairingManager(
+                    device = device,
+                    deviceManager = deviceManager,
+                    onPairingComplete = {
+                        Timber.i("Pairing completed for newly associated device ${device.name}")
+                        onDeviceAssociated(device)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                            deviceManager.startObservingDevicePresence(
+                                ObservingDevicePresenceRequest.Builder().setAssociationId(device.id)
+                                    .build()
+                            )
+                        } else {
+                            deviceManager.startObservingDevicePresence(device.address)
+                        }
+
+                        pendingPairingDevice = null
+
+                    },
+                    onPairingCancelled = {
+                        Timber.i("Pairing cancelled for newly associated device ${device.name}")
+                        // Still add the device even if pairing was cancelled
+                        onDeviceAssociated(device)
+                        pendingPairingDevice = null
+                    }
+                )
+            }
         }
     }
 }
@@ -568,6 +451,7 @@ private fun DevicesScreen(
 private fun ScanForDevicesMenu(
     deviceManager: CompanionDeviceManager,
     associatedDevices: List<AssociatedDeviceCompat>,
+    onSetPairingDevice: (AssociatedDeviceCompat) -> Unit,
     onDeviceAssociated: (AssociatedDeviceCompat) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -575,10 +459,6 @@ private fun ScanForDevicesMenu(
     var errorMessage by remember {
         mutableStateOf("")
     }
-
-    // State for managing pairing after association
-    var pendingPairingDevice by remember { mutableStateOf<AssociatedDeviceCompat?>(null) }
-
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult(),
@@ -602,13 +482,12 @@ private fun ScanForDevicesMenu(
                             deviceManager.disassociate(this.address)
                             errorMessage =
                                 "The device was already associated. The association was removed to prevent duplicates. Please try again."
-
                         }
                         return@run
                     }
                     if (!isDevicePaired(adapter, this.address)) {
                         Timber.i("Device ${this.name} associated but not paired, initiating pairing")
-                        pendingPairingDevice = this
+                        onSetPairingDevice(this)
                     } else {
                         Timber.i("Device ${this.name} already paired, completing association")
                         onDeviceAssociated(this)
@@ -639,33 +518,6 @@ private fun ScanForDevicesMenu(
         }
     }
 
-    // Handle pairing for newly associated device
-    pendingPairingDevice?.let { device ->
-        PairingManager(
-            device = device,
-            deviceManager = deviceManager,
-            onPairingComplete = {
-                Timber.i("Pairing completed for newly associated device ${device.name}")
-                onDeviceAssociated(device)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                    deviceManager.startObservingDevicePresence(
-                        ObservingDevicePresenceRequest.Builder().setAssociationId(device.id).build()
-                    )
-                } else {
-                    deviceManager.startObservingDevicePresence(device.address)
-                }
-
-                pendingPairingDevice = null
-
-            },
-            onPairingCancelled = {
-                Timber.i("Pairing cancelled for newly associated device ${device.name}")
-                // Still add the device even if pairing was cancelled
-                onDeviceAssociated(device)
-                pendingPairingDevice = null
-            }
-        )
-    }
 
     Column(
         modifier = Modifier
@@ -706,12 +558,17 @@ private fun ScanForDevicesMenu(
 @Composable
 private fun AssociatedDevicesList(
     associatedDevices: List<AssociatedDeviceCompat>,
+    deviceManager: CompanionDeviceManager,
     onConnect: (AssociatedDeviceCompat) -> Unit,
-    //  onDisassociate: (AssociatedDeviceCompat) -> Unit,
+    onSetPendingPairingDevice: (AssociatedDeviceCompat) -> Unit,
 ) {
+
+    val context = LocalContext.current
+    val bluetoothManager = context.getSystemService<BluetoothManager>()
+    val adapter = bluetoothManager?.adapter
+
+
     Column {
-
-
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -723,11 +580,22 @@ private fun AssociatedDevicesList(
                 )
             }
             items(associatedDevices) { device ->
+                val isPaired = try {
+                    adapter?.let { isDevicePaired(it, device.address) } ?: false
+                } catch (e: SecurityException) {
+                    false
+                }
                 Row(
                     Modifier
                         .fillMaxWidth()
                         .padding(24.dp)
-                        .clickable(true, onClick = { onConnect(device) }),
+                        .clickable(
+                            true,
+                            onClick = {
+                                if (isPaired) onConnect(device) else onSetPendingPairingDevice(
+                                    device
+                                )
+                            }),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
 
@@ -748,6 +616,28 @@ private fun AssociatedDevicesList(
                             .weight(1f),
                     ) {
                         Text(fontWeight = FontWeight.Bold, text = device.name)
+
+                        if (!isPaired) {
+                            Text(
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                text = context.getString(R.string.not_paired_tap_to_pair_again),
+                            )
+
+                            // TODO refactor into separate method
+                            // TODO extract logic to service properly this should not be in UI
+                            context.stopService(Intent(context.applicationContext, LocationSenderService::class.java))
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                                deviceManager.stopObservingDevicePresence(
+                                    ObservingDevicePresenceRequest.Builder().setAssociationId(device.id)
+                                        .build()
+                                )
+
+                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                @Suppress("DEPRECATION")
+                                deviceManager.stopObservingDevicePresence(device.address)
+                            }                        }
+
                     }
                     Column(
                         Modifier
@@ -764,6 +654,7 @@ private fun AssociatedDevicesList(
                     }
 
                 }
+
                 HorizontalDivider(
                     modifier = Modifier.padding(top = 2.dp),
                     thickness = 1.dp,

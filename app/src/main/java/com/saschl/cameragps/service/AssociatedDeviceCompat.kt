@@ -31,6 +31,7 @@ data class AssociatedDeviceCompat(
     val address: String,
     val name: String,
     val device: BluetoothDevice?,
+    var isPaired: Boolean = false
 )
 
 
