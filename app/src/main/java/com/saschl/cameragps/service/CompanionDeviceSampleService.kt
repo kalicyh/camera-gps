@@ -57,7 +57,7 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
             return
         }
 
-        startLocationSenderService(address)
+       // startLocationSenderService(address)
     }
 
     @Deprecated("Deprecated in Java")
@@ -92,7 +92,7 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
             val associationInfo = associatedDevices?.find { it.id == associationId }
             val address = associationInfo?.deviceMacAddress?.toString()
 
-            startLocationSenderService(address)
+           // startLocationSenderService(address)
         }
     }
 
@@ -119,7 +119,7 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
 
         //fusedLocationClient.removeLocationUpdates(locationCallback)
 
-        stopService(Intent(this, LocationSenderService::class.java))
+      //  stopService(Intent(this, LocationSenderService::class.java))
         //  notificationManager.onDeviceDisappeared("Service gone :)")
 
         /*   gatt?.disconnect()
