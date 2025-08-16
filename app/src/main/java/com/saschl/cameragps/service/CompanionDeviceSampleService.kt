@@ -60,19 +60,18 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
         startLocationSenderService(address)
     }
 
-   /* @Deprecated("Deprecated in Java")
+    @Deprecated("Deprecated in Java")
     @SuppressLint("MissingPermission")
     override fun onDeviceAppeared(associationInfo: AssociationInfo) {
         super.onDeviceAppeared(associationInfo)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU || missingPermissions()) {
-            return
+        Timber.i("Device appeared old API: ${associationInfo.id}")
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val address = associationInfo.deviceMacAddress?.toString() ?: return
+
+            startLocationSenderService(address)
         }
-
-        val address = associationInfo.deviceMacAddress?.toString() ?: return
-
-        startLocationSenderService(address)
-
-    }*/
+    }
 
 
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
@@ -94,7 +93,7 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
             val associationInfo = associatedDevices?.find { it.id == associationId }
             val address = associationInfo?.deviceMacAddress?.toString()
 
-            startLocationSenderService(address)
+            //startLocationSenderService(address)
         }
     }
 
