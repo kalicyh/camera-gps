@@ -69,7 +69,7 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val address = associationInfo.deviceMacAddress?.toString() ?: return
 
-            startLocationSenderService(address)
+           // startLocationSenderService(address)
         }
     }
 
@@ -82,7 +82,6 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
             Timber.e(CompanionDeviceSampleService::class.java.toString(), "Missing permissions")
             return
         }
-        Timber.i("Event received: ${event.event}, associationId: ${event.associationId}");
 
         if (event.event == DevicePresenceEvent.EVENT_BLE_APPEARED) {
 
@@ -107,7 +106,7 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
 
         //fusedLocationClient.removeLocationUpdates(locationCallback)
 
-        stopService(Intent(this, LocationSenderService::class.java))
+        //stopService(Intent(this, LocationSenderService::class.java))
         //  notificationManager.onDeviceDisappeared("Service gone :)")
 
         /*   gatt?.disconnect()
