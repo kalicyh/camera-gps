@@ -83,11 +83,12 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
             Timber.e(CompanionDeviceSampleService::class.java.toString(), "Missing permissions")
             return
         }
+        Timber.i("Event received: ${event.event}, associationId: ${event.associationId}");
 
         if (event.event == DevicePresenceEvent.EVENT_BLE_APPEARED) {
 
-            Timber.i("Device appeared new API: ${event.getAssociationId()}")
-            val associationId = event.getAssociationId()
+            Timber.i("Device appeared new API: ${event.associationId}")
+            val associationId = event.associationId
             val deviceManager = getSystemService<CompanionDeviceManager>()
             val associatedDevices = deviceManager?.getMyAssociations()
             val associationInfo = associatedDevices?.find { it.id == associationId }
@@ -121,16 +122,6 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
           return START_STICKY
       }*/
 
-    @SuppressLint("MissingPermission")
-    override fun onCreate() {
-        super.onCreate()
-
-        /*  Timber.plant(
-              Timber.DebugTree(),
-              FileTree()
-          )*/
-
-    }
 
     /**
      * Check BLUETOOTH_CONNECT is granted and POST_NOTIFICATIONS is granted for devices running

@@ -205,9 +205,9 @@ class LocationSenderService : Service() {
 
     @SuppressLint("MissingPermission")
     override fun onDestroy() {
+       // fusedLocationClient.removeLocationUpdates(locationCallback)
         gatt1?.disconnect()
         gatt1?.close()
-        fusedLocationClient.removeLocationUpdates(locationCallback)
         super.onDestroy()
     }
 
@@ -253,9 +253,9 @@ class LocationSenderService : Service() {
                             locationResultVar = lastLocation
                         }
                     } else {
-                        Timber.w(
+                      /*  Timber.w(
                             "New location is more accurate than the old one, updating"
-                        )
+                        )*/
                         locationResultVar = lastLocation
                     }
 
