@@ -84,8 +84,6 @@ class LocationSenderService : Service() {
                 Timber.e("An error happened: $status")
                 fusedLocationClient.removeLocationUpdates(locationCallback)
 
-
-
                 if (startedManually && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     stopSelf()
                 }
@@ -94,15 +92,8 @@ class LocationSenderService : Service() {
                 gatt.discoverServices()
 
             }
-
-
         }
 
-        override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
-            super.onMtuChanged(gatt, mtu, status)
-            //    state = state.copy(gatt = gatt, mtu = mtu)
-            //    currentOnStateChange(state)
-        }
 
         @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
@@ -205,10 +196,10 @@ class LocationSenderService : Service() {
 
     @SuppressLint("MissingPermission")
     override fun onDestroy() {
-       // fusedLocationClient.removeLocationUpdates(locationCallback)
-        gatt1?.disconnect()
-        gatt1?.close()
         super.onDestroy()
+        // fusedLocationClient.removeLocationUpdates(locationCallback)
+        gatt1?.close()
+        Timber.i("Destroyed service")
     }
 
     @SuppressLint("MissingPermission")
@@ -231,7 +222,6 @@ class LocationSenderService : Service() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(fetchedLocation: LocationResult) {
-                //Log.i("ayup", "Location result received " + fetchedLocation.lastLocation.toString())
 
                 // any location is better than none for now
                 val lastLocation = fetchedLocation.lastLocation
@@ -327,13 +317,13 @@ class LocationSenderService : Service() {
                     data,
                     BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT,
                 )
-                Timber.i("Write result: $result")
+               // Timber.i("Write result: $result")
             }
         } else {
             if (characteristic != null) {
                 characteristic.value = data
                 val result = gatt?.writeCharacteristic(characteristic)
-                Timber.i("Write result: $result")
+              //  Timber.i("Write result: $result")
             }
         }
     }

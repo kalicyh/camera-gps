@@ -92,8 +92,21 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
             val associationInfo = associatedDevices?.find { it.id == associationId }
             val address = associationInfo?.deviceMacAddress?.toString()
 
-            //startLocationSenderService(address)
+            startLocationSenderService(address)
         }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        if (Timber.treeCount == 0) {
+            FileTree.initialize(this)
+            Timber.plant(Timber.DebugTree(), FileTree(this))
+
+            // Set up global exception handler to log crashes
+            val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+            Thread.setDefaultUncaughtExceptionHandler(GlobalExceptionHandler(defaultHandler))
+        }
+        Timber.i("CDM started")
     }
 
 
@@ -106,13 +119,11 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
 
         //fusedLocationClient.removeLocationUpdates(locationCallback)
 
-        //stopService(Intent(this, LocationSenderService::class.java))
+        stopService(Intent(this, LocationSenderService::class.java))
         //  notificationManager.onDeviceDisappeared("Service gone :)")
 
         /*   gatt?.disconnect()
-           gatt?.close()*/
-        Timber.e("Destroyed service")
-    }
+           gatt?.close()*/ }
 
     /*  override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
           super.onStartCommand(intent, flags, startId)
