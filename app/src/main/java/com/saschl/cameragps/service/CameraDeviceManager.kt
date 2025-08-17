@@ -421,15 +421,6 @@ private fun DevicesScreen(
                     onPairingComplete = {
                         Timber.i("Pairing completed for newly associated device ${device.name}")
                         onDeviceAssociated(device)
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                            deviceManager.startObservingDevicePresence(
-                                ObservingDevicePresenceRequest.Builder().setAssociationId(device.id)
-                                    .build()
-                            )
-                        } else {
-                            deviceManager.startObservingDevicePresence(device.address)
-                        }
-
                         pendingPairingDevice = null
 
                     },

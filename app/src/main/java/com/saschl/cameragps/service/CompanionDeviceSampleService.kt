@@ -57,19 +57,20 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
             return
         }
 
-       // startLocationSenderService(address)
+        startLocationSenderService(address)
     }
 
     @Deprecated("Deprecated in Java")
     @SuppressLint("MissingPermission")
     override fun onDeviceAppeared(associationInfo: AssociationInfo) {
         super.onDeviceAppeared(associationInfo)
-        Timber.i("Device appeared old API: ${associationInfo.id}")
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
+            Timber.i("Device appeared old API: ${associationInfo.id}")
+
             val address = associationInfo.deviceMacAddress?.toString() ?: return
 
-           // startLocationSenderService(address)
+            startLocationSenderService(address)
         }
     }
 
@@ -92,7 +93,7 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
             val associationInfo = associatedDevices?.find { it.id == associationId }
             val address = associationInfo?.deviceMacAddress?.toString()
 
-           // startLocationSenderService(address)
+            startLocationSenderService(address)
         }
     }
 
@@ -145,45 +146,4 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
                 Manifest.permission.POST_NOTIFICATIONS,
             ) != PackageManager.PERMISSION_GRANTED
 
-    /**
-     * Utility class to post notification when CDM notifies that a device appears or disappears
-     */
-    class DeviceNotificationManager(context: Context) {
-
-        companion object {
-            private const val CDM_CHANNEL = "cdm_channel"
-        }
-
-        private val manager = NotificationManagerCompat.from(context)
-
-        private val notificationBuilder = NotificationCompat.Builder(context, CDM_CHANNEL)
-            .setSmallIcon(R.drawable.ic_gps_fixed)
-            .setContentTitle("Companion Device Manager Sample")
-
-        init {
-            createNotificationChannel()
-        }
-
-        @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
-        fun onDeviceAppeared(address: String, status: String) {
-            val notification =
-                notificationBuilder.setContentText("Device: $address appeared.\nStatus: $status")
-            manager.notify(address.hashCode(), notification.build())
-        }
-
-        @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
-        fun onDeviceDisappeared(address: String) {
-            val notification = notificationBuilder.setContentText("Device: $address disappeared")
-            manager.notify(address.hashCode(), notification.build())
-        }
-
-        private fun createNotificationChannel() {
-            val channel =
-                NotificationChannelCompat.Builder(CDM_CHANNEL, NotificationManager.IMPORTANCE_HIGH)
-                    .setName("CDM Sample")
-                    .setDescription("Channel for the CDM sample")
-                    .build()
-            manager.createNotificationChannel(channel)
-        }
-    }
 }
