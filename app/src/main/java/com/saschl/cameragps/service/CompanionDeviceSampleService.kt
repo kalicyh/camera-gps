@@ -95,6 +95,11 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
 
             startLocationSenderService(address)
         }
+
+        if (event.event == DevicePresenceEvent.EVENT_BLE_DISAPPEARED) {
+            Timber.i("Device disappeared new API: ${event.associationId}")
+            stopService(Intent(this, LocationSenderService::class.java))
+        }
     }
 
     override fun onCreate() {
