@@ -49,6 +49,7 @@
     <string name="permissions_required_app_error">%s is required for the app to function</string>
     <string name="background_location_required_error">Background location access required for continuous GPS sync when app is not in foreground</string>
     <string name="remove">Remove</string>
+
     <string name="not_paired_tap_to_pair_again">Not paired, tap device to pair again</string>
     <string name="to_pair_with_your_camera_please">To pair with your camera \'%1$s\', please:</string>
     <string name="_1_turn_on_your_camera">\n1. Turn on your camera</string>
@@ -61,4 +62,20 @@
     <string name="no_device_matching_the_given_filter_were_found">No device matching the given filter were found</string>
     <string name="the_user_explicitly_declined_the_request">The user explicitly declined the request</string>
     <string name="unknown_error">Unknown error</string>
+
+
+
+    <!-- Welcome screen strings -->
+    <string name="welcome_app_icon_description">Camera GPS App Icon</string>
+    <string name="welcome_title">Welcome to Camera GPS</string>
+    <string name="welcome_subtitle">Sync your camera\'s location with your phone\'s GPS</string>
+    <string name="welcome_feature_connect_title">Connect Your Camera</string>
+    <string name="welcome_feature_connect_description">Pair your camera with your phone via Bluetooth to establish a connection.</string>
+    <string name="welcome_feature_gps_sync_title">Automatic GPS Sync</string>
+    <string name="welcome_feature_gps_sync_description">Your phone\'s GPS location is automatically sent to your camera when taking photos.</string>
+    <string name="welcome_feature_device_management_title">Device Management</string>
+    <string name="welcome_feature_device_management_description">Manage paired cameras, view connection status, and configure settings easily.</string>
+    <string name="welcome_get_started_button">Get Started</string>
+    <string name="welcome_settings_note">You can access this information again from the app settings.</string>
+
 </resources>

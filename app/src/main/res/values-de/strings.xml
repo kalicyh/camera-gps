@@ -43,4 +43,31 @@
     <string name="once_your_camera_is_ready_tap_continue_to_start_pairing">Sobald das erledigt ist, tippe auf weiter.</string>
     <string name="location_bluetooth_benefit_1">• Verbinde dich mit Bluetooth zur Sony Kamera</string>
     <string name="location_bluetooth_benefit_2">• Zugriff auf Standortdaten zur Übermittlung an die Kamera</string>
+
+    <string name="unknown_error">Unbekannter Fehler</string>
+    <string name="welcome_app_icon_description">Kamera-GPS-App-Symbol</string>
+
+    <string name="welcome_title">Willkommen bei Camera GPS</string>
+
+    <string name="welcome_subtitle">Synchronisieren Sie den Standort Ihrer Kamera mit dem GPS Ihres Telefons</string>
+
+    <string name="welcome_feature_connect_title">Schließen Sie Ihre Kamera an</string>
+
+    <string name="welcome_feature_connect_description">Koppeln Sie Ihre Kamera über Bluetooth mit Ihrem Telefon, um eine Verbindung herzustellen.</string>
+
+    <string name="welcome_feature_gps_sync_title">Automatische GPS-Synchronisierung</string>
+
+    <string name="welcome_feature_gps_sync_description">Der GPS-Standort Ihres Telefons wird beim Aufnehmen von Fotos automatisch an Ihre Kamera gesendet.</string>
+
+    <string name="welcome_feature_device_management_title">Geräteverwaltung</string>
+
+    <string name="welcome_feature_device_management_description">Verwalten Sie gekoppelte Kameras, zeigen Sie den Verbindungsstatus an und konfigurieren Sie Einstellungen ganz einfach.</string>
+
+    <string name="welcome_get_started_button">Erste Schritte</string>
+
+    <string name="welcome_settings_note">Sie können diese Informationen erneut über die App-Einstellungen abrufen.</string>
+    <string name="the_request_was_canceled">Die Anfrage wurde abgebrochen</string>
+    <string name="internal_error_happened">Interner Fehler</string>
+    <string name="no_device_matching_the_given_filter_were_found">Kein Gerät mit dem definierten Filter gefunden</string>
+    <string name="the_user_explicitly_declined_the_request">Sie haben die Anfrage abgelehnt. Bitte erneut versuchen.</string>
 </resources>

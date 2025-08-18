@@ -46,6 +46,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -114,9 +115,10 @@ fun CameraDeviceManager() {
             Lifecycle.State.CREATED -> {}
             Lifecycle.State.STARTED -> {}
             Lifecycle.State.RESUMED -> {
-            associatedDevices = deviceManager!!.getAssociatedDevices()}
+                associatedDevices = deviceManager!!.getAssociatedDevices()
+            }
         }
-        }
+    }
 
 
     if (deviceManager == null || adapter == null) {
@@ -126,7 +128,11 @@ fun CameraDeviceManager() {
             EnhancedLocationPermissionBox {
                 DevicesScreen(
                     deviceManager,
-                    onDeviceAssociated = { associatedDevices = associatedDevices.filter { associatedDevice -> associatedDevice != it }; it.isPaired = true; associatedDevices = associatedDevices + it },
+                    onDeviceAssociated = {
+                        associatedDevices =
+                            associatedDevices.filter { associatedDevice -> associatedDevice != it }; it.isPaired =
+                        true; associatedDevices = associatedDevices + it
+                    },
                     onConnect = { device ->
                         selectedDevice =
                             (device.device ?: adapter.getRemoteDevice(device.address))
@@ -210,6 +216,21 @@ private fun DevicesScreen(
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(30.dp),
             )
+        }, floatingActionButton = {
+            FloatingActionButton(onClick = {
+                context.startActivity(
+                    Intent(
+                        context,
+                        LogViewerActivity::class.java
+                    )
+                )
+
+            }) {
+                Icon(
+                    painterResource(R.drawable.baseline_view_list_24),
+                    contentDescription = "View Logs"
+                )
+            }
         }) { innerPadding ->
 
 
@@ -220,23 +241,23 @@ private fun DevicesScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
 
             ) {
-            Button(onClick = {
+/*            Button(onClick = {
                 context.startActivity(
                     Intent(
                         context,
                         LogViewerActivity::class.java
                     )
                 )
-            }) { Text(text = stringResource(R.string.view_logs)) }
+            }) { Text(text = stringResource(R.string.view_logs)) }*/
             ScanForDevicesMenu(
                 deviceManager,
                 associatedDevices,
                 onSetPairingDevice = { device -> pendingPairingDevice = device })
             {
                 onDeviceAssociated(it)
-              //  BlePresenceScanner.start(context)
+                //  BlePresenceScanner.start(context)
                 startDevicePresenceObservation(deviceManager, it)
-              //  startForegroundService(context, serviceIntent)
+                //  startForegroundService(context, serviceIntent)
 
             }
             AssociatedDevicesList(
@@ -451,17 +472,24 @@ private fun AssociatedDevicesList(
 
                             // TODO refactor into separate method
                             // TODO extract logic to service properly this should not be in UI
-                            context.stopService(Intent(context.applicationContext, LocationSenderService::class.java))
+                            context.stopService(
+                                Intent(
+                                    context.applicationContext,
+                                    LocationSenderService::class.java
+                                )
+                            )
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
                                 deviceManager.stopObservingDevicePresence(
-                                    ObservingDevicePresenceRequest.Builder().setAssociationId(device.id)
+                                    ObservingDevicePresenceRequest.Builder()
+                                        .setAssociationId(device.id)
                                         .build()
                                 )
 
                             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                 @Suppress("DEPRECATION")
                                 deviceManager.stopObservingDevicePresence(device.address)
-                            }                        }
+                            }
+                        }
 
                     }
                     Column(
