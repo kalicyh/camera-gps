@@ -83,5 +83,6 @@
     <string name="welcome_feature_device_management_description">Manage paired cameras, view connection status, and configure settings easily.</string>
     <string name="welcome_get_started_button">Get Started</string>
     <string name="welcome_settings_note">You can access this information again from the app settings.</string>
+    <string name="associated_devices">Associated Devices:</string>
 
 </resources>

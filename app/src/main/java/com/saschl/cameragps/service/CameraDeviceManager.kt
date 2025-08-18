@@ -467,7 +467,7 @@ private fun AssociatedDevicesList(
         ) {
             stickyHeader {
                 Text(
-                    text = "Associated Devices:",
+                    text = stringResource(R.string.associated_devices),
                     modifier = Modifier.padding(8.dp),
                     style = MaterialTheme.typography.titleMedium,
                 )

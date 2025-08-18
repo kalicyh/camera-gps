@@ -7,12 +7,12 @@
     <string name="permission_bluetooth">Erlaube der App Bluetooth Verbindungen herzustellen</string>
     <string name="permission_notifications">Erlaube der App Benachrichtigungen anzuzeigen</string>
     <string name="step1_title">Schritt 1: Bluetooth und Standortzugriff</string>
-    <string name="step1_desc">Benötigt, damit eine Verbindung zur Kamera hergestellt werden kann und der Standort gesendet wird.</string>
+    <string name="step1_desc">Benötigt, damit eine Verbindung zur Kamera hergestellt werden kann und der Standort gesendet wird</string>
     <string name="step1_missing">Fehlende Berechtigungen:</string>
     <string name="step1_grant">Erlaube Standort &amp; Bluetooth Zugriff</string>
     <string name="step1_granted">&#10003; Freigegeben</string>
-    <string name="step2_title">Schritt 2: Erlaube Standortzugriff im Hintergrun</string>
-    <string name="step2_desc">Ermöglicht kontinuierliche Übertragung der Standortdaten, auch im Hintergrund.</string>
+    <string name="step2_title">Schritt 2: Erlaube Standortzugriff im Hintergrund</string>
+    <string name="step2_desc">Ermöglicht kontinuierliche Übertragung der Standortdaten, auch im Hintergrund</string>
     <string name="step2_android10_warning">Im nächsten Dialog musst du \"Immer erlauben\" auswählen, damit die App korrekt funktioniert.</string>
     <string name="step2_grant">Erlaube Standortzugriff im Hintergrund.</string>
     <string name="step2_granted">&#10003; Freigegeben</string>
@@ -57,21 +57,22 @@
 
     <string name="welcome_feature_gps_sync_title">Automatische GPS-Synchronisierung</string>
 
-    <string name="welcome_feature_gps_sync_description">Der GPS-Standort Ihres Telefons wird beim Aufnehmen von Fotos automatisch an Ihre Kamera gesendet.</string>
+    <string name="welcome_feature_gps_sync_description">Der GPS-Standort Ihres Telefons wird beim Aufnehmen von Fotos automatisch an Ihre Kamera gesendet</string>
 
     <string name="welcome_feature_device_management_title">Geräteverwaltung</string>
 
-    <string name="welcome_feature_device_management_description">Verwalten Sie gekoppelte Kameras, zeigen Sie den Verbindungsstatus an und konfigurieren Sie Einstellungen ganz einfach.</string>
+    <string name="welcome_feature_device_management_description">Verwalten Sie gekoppelte Kameras, zeigen Sie den Verbindungsstatus an und konfigurieren Sie Einstellungen ganz einfach</string>
 
     <string name="welcome_get_started_button">Erste Schritte</string>
 
-    <string name="welcome_settings_note">Sie können diese Informationen erneut über die App-Einstellungen abrufen.</string>
+    <string name="welcome_settings_note">Sie können diese Informationen erneut über die App-Einstellungen abrufen</string>
     <string name="the_request_was_canceled">Die Anfrage wurde abgebrochen</string>
     <string name="internal_error_happened">Interner Fehler</string>
     <string name="no_device_matching_the_given_filter_were_found">Kein Gerät mit dem definierten Filter gefunden</string>
-    <string name="the_user_explicitly_declined_the_request">Sie haben die Anfrage abgelehnt. Bitte erneut versuchen.</string>
+    <string name="the_user_explicitly_declined_the_request">Sie haben die Anfrage abgelehnt. Bitte erneut versuchen</string>
     <string name="settings">Einstellungen</string>
     <string name="back">Zurück</string>
     <string name="app_controls">App Einstellungen</string>
     <string name="enable_app">Aktiviere Standortübertragung</string>
+    <string name="associated_devices">Verknüpfte Geräte:</string>
 </resources>
