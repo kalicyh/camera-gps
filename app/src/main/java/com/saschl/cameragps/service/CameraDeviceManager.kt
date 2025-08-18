@@ -136,6 +136,7 @@ fun CameraDeviceManager(
                 DevicesScreen(
                     deviceManager,
                     onDeviceAssociated = {
+                        startDevicePresenceObservation(deviceManager, it)
                         associatedDevices =
                             associatedDevices.filter { associatedDevice -> associatedDevice != it }; it.isPaired =
                         true; associatedDevices = associatedDevices + it
@@ -302,7 +303,7 @@ private fun DevicesScreen(
             {
                 onDeviceAssociated(it)
                 //  BlePresenceScanner.start(context)
-                startDevicePresenceObservation(deviceManager, it)
+                //startDevicePresenceObservation(deviceManager, it)
                 //  startForegroundService(context, serviceIntent)
 
             }
@@ -679,7 +680,7 @@ private suspend fun requestDeviceAssociation(
         override fun onAssociationCreated(associationInfo: AssociationInfo) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 Timber.i("Association created: ${associationInfo.displayName} (${associationInfo.id})")
-                startDevicePresenceObservation(deviceManager, associationInfo.toAssociatedDevice())
+                //startDevicePresenceObservation(deviceManager, associationInfo.toAssociatedDevice())
             }
         }
 

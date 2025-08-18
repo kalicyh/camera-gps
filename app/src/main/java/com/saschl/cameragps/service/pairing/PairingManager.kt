@@ -152,7 +152,7 @@ fun PairingManager(
                 pairingDialogState = PairingDialogState(device = device, isVisible = true)
             } else if (isDevicePaired(adapter, device.address)) {
                 Timber.i("Device ${device.name} is already paired")
-                startDevicePresenceObservation(deviceManager, device)
+                //startDevicePresenceObservation(deviceManager, device)
                 onPairingComplete()
             }
         }
@@ -202,9 +202,7 @@ fun PairingManager(
                         pairingResult = PairingResult.SUCCESS
                     )
 
-                    // Start observing device presence after successful pairing
                     scope.launch {
-                        startDevicePresenceObservation(deviceManager, device)
                         onPairingComplete()
                     }
                 },
