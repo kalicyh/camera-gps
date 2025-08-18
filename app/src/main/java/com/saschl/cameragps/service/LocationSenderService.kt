@@ -91,7 +91,6 @@ class LocationSenderService : Service() {
             } else {
                 Timber.i("Connected to device %d", status)
                 gatt.discoverServices()
-
             }
         }
 
