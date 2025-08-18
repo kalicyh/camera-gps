@@ -44,7 +44,7 @@ class LogViewerActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         //if(Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            enableEdgeToEdge()
+            //enableEdgeToEdge()
         //}
 
         setContent {

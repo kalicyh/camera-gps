@@ -3,24 +3,20 @@ package com.saschl.cameragps
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
 import com.saschl.cameragps.service.FileTree
 import com.saschl.cameragps.service.GlobalExceptionHandler
 import com.saschl.cameragps.ui.theme.CameraGpsTheme
@@ -33,9 +29,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        //if(Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            enableEdgeToEdge()
-        //}
+        WindowCompat.enableEdgeToEdge(window)
 
         if (Timber.treeCount == 0) {
             FileTree.initialize(this)
@@ -49,15 +43,17 @@ class MainActivity : ComponentActivity() {
         Timber.i("created MainActivity")
         setContent {
             CameraGpsTheme {
+                // Configure status bar appearance based on theme
+                val view = LocalView.current
+                val darkTheme = isSystemInDarkTheme()
+                SideEffect {
+                    val window = (view.context as ComponentActivity).window
+                    WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+                }
+
                 AppContent()
             }
-           /* if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM && !isSystemInDarkTheme()) {
-                // WHYYYY
-                StatusBarProtection()
-            }*/
-
         }
-
     }
 
     @Composable
@@ -79,34 +75,9 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun StatusBarProtection(
-        color: Color = MaterialTheme.colorScheme.secondary,
-        heightProvider: () -> Float = calculateGradientHeight(),
-    ) {
-
-        Canvas(Modifier.fillMaxSize()) {
-            val calculatedHeight = heightProvider()
-            val gradient = Brush.verticalGradient(
-                colors = listOf(
-                    color.copy(alpha = 1f),
-                    color.copy(alpha = .8f),
-                    color.copy(alpha = .6f),
-                    Color.Transparent
-                ),
-                startY = 0f,
-                endY = calculatedHeight
-            )
-            drawRect(
-                brush = gradient,
-                size = Size(size.width, calculatedHeight),
-            )
-        }
-    }
-
-    @Composable
     fun calculateGradientHeight(): () -> Float {
         val statusBars = WindowInsets.statusBars
         val density = LocalDensity.current
-        return { statusBars.getTop(density).times(1.2f) }
+        return { statusBars.getTop(density).times(1.0f) }
     }
 }
