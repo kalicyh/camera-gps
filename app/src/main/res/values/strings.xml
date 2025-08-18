@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name" translatable="false">CameraGps</string>
-    <string name="app_name_ui" translatable="false">Camera GPS</string>
+    <string name="app_name" translatable="false">AlphaGPS</string>
+    <string name="app_name_ui" translatable="false">Alpha GPS</string>
     <string name="foreground_service_notification">Transmitting location data to camera</string>
     <string name="scan_for_devices">Click to find &amp; associate your camera</string>
     <string name="permission_gps">Access precise location</string>
@@ -49,6 +49,13 @@
     <string name="permissions_required_app_error">%s is required for the app to function</string>
     <string name="background_location_required_error">Background location access required for continuous GPS sync when app is not in foreground</string>
     <string name="remove">Remove</string>
+
+    <!-- Settings screen strings -->
+    <string name="settings">Settings</string>
+    <string name="back">Back</string>
+    <string name="app_controls">App Controls</string>
+    <string name="enable_app">Enable App</string>
+    <string name="enable_app_description">Turn the app functionality on or off. Might need a restart of your camera</string>
 
     <string name="not_paired_tap_to_pair_again">Not paired, tap device to pair again</string>
     <string name="to_pair_with_your_camera_please">To pair with your camera \'%1$s\', please:</string>

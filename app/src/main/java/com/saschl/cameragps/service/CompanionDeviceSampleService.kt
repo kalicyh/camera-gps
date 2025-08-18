@@ -35,6 +35,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.getSystemService
 import com.saschl.cameragps.R
+import com.saschl.cameragps.utils.PreferencesManager
 import timber.log.Timber
 import java.util.Locale
 import java.util.UUID
@@ -43,10 +44,12 @@ import java.util.UUID
 class CompanionDeviceSampleService : CompanionDeviceService() {
 
     private fun startLocationSenderService(address: String?) {
-        val serviceIntent = Intent(this, LocationSenderService::class.java)
-        serviceIntent.putExtra("address", address?.uppercase(Locale.getDefault()))
-        Timber.i("Starting LocationSenderService for address: $address")
-        startForegroundService(serviceIntent)
+        if (PreferencesManager.isAppEnabled(this)) {
+            val serviceIntent = Intent(this, LocationSenderService::class.java)
+            serviceIntent.putExtra("address", address?.uppercase(Locale.getDefault()))
+            Timber.i("Starting LocationSenderService for address: $address")
+            startForegroundService(serviceIntent)
+        }
     }
 
     @SuppressLint("MissingPermission")

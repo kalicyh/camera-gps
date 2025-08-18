@@ -7,6 +7,7 @@ import androidx.core.content.edit
 object PreferencesManager {
     private const val PREFS_NAME = "camera_gps_prefs"
     private const val KEY_FIRST_LAUNCH = "is_first_launch"
+    private const val KEY_APP_ENABLED = "app_enabled"
 
     private fun getPreferences(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -19,6 +20,16 @@ object PreferencesManager {
     fun setFirstLaunchCompleted(context: Context) {
         getPreferences(context).edit {
             putBoolean(KEY_FIRST_LAUNCH, false)
+        }
+    }
+
+    fun isAppEnabled(context: Context): Boolean {
+        return getPreferences(context).getBoolean(KEY_APP_ENABLED, true)
+    }
+
+    fun setAppEnabled(context: Context, enabled: Boolean) {
+        getPreferences(context).edit {
+            putBoolean(KEY_APP_ENABLED, enabled)
         }
     }
 }

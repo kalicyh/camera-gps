@@ -45,13 +45,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -84,7 +89,9 @@ import java.util.regex.Pattern
 
 @SuppressLint("MissingPermission")
 @Composable
-fun CameraDeviceManager() {
+fun CameraDeviceManager(
+    onSettingsClick: () -> Unit = {}
+) {
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -138,7 +145,8 @@ fun CameraDeviceManager() {
                             (device.device ?: adapter.getRemoteDevice(device.address))
 
                     },
-                    associatedDevices = associatedDevices
+                    associatedDevices = associatedDevices,
+                    onSettingsClick = onSettingsClick
                 )
             }
         } else {
@@ -196,6 +204,7 @@ private data class DeviceConnectionState(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("MissingPermission")
 @Composable
 private fun DevicesScreen(
@@ -203,6 +212,7 @@ private fun DevicesScreen(
     associatedDevices: List<AssociatedDeviceCompat>,
     onDeviceAssociated: (AssociatedDeviceCompat) -> Unit,
     onConnect: (AssociatedDeviceCompat) -> Unit,
+    onSettingsClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -211,27 +221,63 @@ private fun DevicesScreen(
 
     Scaffold(
         topBar = {
-            Text(
-                text = stringResource(R.string.app_name_ui),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(30.dp),
-            )
-        }, floatingActionButton = {
-            FloatingActionButton(onClick = {
-                context.startActivity(
-                    Intent(
-                        context,
-                        LogViewerActivity::class.java
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.app_name_ui),
+                      //  style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold
                     )
-                )
+                },
 
-            }) {
+                actions = {
+                    IconButton(
+                        onClick = {
+                            context.startActivity(
+                                Intent(context, LogViewerActivity::class.java)
+                            )
+                        }
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.baseline_view_list_24),
+                            contentDescription = "View Logs",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(onClick = { onSettingsClick() }) {
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                )
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    context.startActivity(
+                        Intent(
+                            context,
+                            LogViewerActivity::class.java
+                        )
+                    )
+                },
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
                 Icon(
                     painterResource(R.drawable.baseline_view_list_24),
-                    contentDescription = "View Logs"
+                    contentDescription = "View Logs",
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
-        }) { innerPadding ->
+        }
+    ) { innerPadding ->
 
 
         Column(

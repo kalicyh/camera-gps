@@ -87,13 +87,5 @@ fun DeviceDetailScreen(
                 }
             }
         }
-
-        HorizontalDivider(
-            modifier = Modifier.padding(top = 2.dp),
-            thickness = 1.dp,
-            color = MaterialTheme.colorScheme.outline
-        )
     }
-
-
 }
