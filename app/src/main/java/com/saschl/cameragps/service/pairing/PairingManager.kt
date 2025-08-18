@@ -16,29 +16,116 @@
 
 package com.saschl.cameragps.service.pairing
 
+import android.Manifest
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.companion.CompanionDeviceManager
 import android.companion.ObservingDevicePresenceRequest
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
+import androidx.annotation.RequiresPermission
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.getSystemService
 import com.saschl.cameragps.service.AssociatedDeviceCompat
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.Locale
+
+// =============================================================================
+// Bluetooth Utility Functions
+// =============================================================================
+
+@RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+fun isDevicePaired(adapter: BluetoothAdapter?, deviceAddress: String): Boolean {
+    return adapter?.bondedDevices?.any {
+        it.address == deviceAddress.uppercase(Locale.getDefault())
+    } ?: false
+}
+
+@RequiresPermission(allOf = [Manifest.permission.BLUETOOTH_CONNECT])
+fun initiateBluetoothPairing(device: BluetoothDevice): Boolean {
+    return try {
+        @Suppress("MissingPermission") // Permission is checked by caller
+        device.createBond()
+    } catch (e: SecurityException) {
+        Timber.e(e, "Failed to initiate pairing due to security exception")
+        false
+    } catch (e: Exception) {
+        Timber.e(e, "Failed to initiate pairing")
+        false
+    }
+}
+
+@RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+@Composable
+fun BondingStateListener(
+    device: BluetoothDevice,
+    onBondingSuccess: () -> Unit,
+    onBondingFailed: () -> Unit
+) {
+    val context = LocalContext.current
+    val currentOnBondingSuccess by rememberUpdatedState(onBondingSuccess)
+    val currentOnBondingFailed by rememberUpdatedState(onBondingFailed)
+
+    DisposableEffect(device) {
+        val bondingReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
+                        val bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE)
+                        val bondedDevice = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
+                        } else {
+                            @Suppress("DEPRECATION")
+                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                        }
+
+                        if (bondedDevice?.address == device.address) {
+                            when (bondState) {
+                                BluetoothDevice.BOND_BONDED -> {
+                                    currentOnBondingSuccess()
+                                }
+                                BluetoothDevice.BOND_NONE -> {
+                                    currentOnBondingFailed()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+        context.registerReceiver(bondingReceiver, filter)
+
+        onDispose {
+            context.unregisterReceiver(bondingReceiver)
+        }
+    }
+}
+
+// =============================================================================
+// High-Level Pairing Manager
+// =============================================================================
 
 /**
  * A centralized pairing manager that handles the complete pairing flow for devices.
  * This component manages pairing dialogs, state transitions, and device presence observation.
  */
+@RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
 @Composable
 fun PairingManager(
     device: AssociatedDeviceCompat,
