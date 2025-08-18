@@ -44,12 +44,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             CameraGpsTheme {
                 // Configure status bar appearance based on theme
-                val view = LocalView.current
-                val darkTheme = isSystemInDarkTheme()
-                SideEffect {
-                    val window = (view.context as ComponentActivity).window
-                    WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
-                }
+
 
                 AppContent()
             }

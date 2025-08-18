@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import com.saschl.cameragps.service.FileTree
 import com.saschl.cameragps.ui.theme.CameraGpsTheme
 import kotlinx.coroutines.delay
@@ -43,6 +44,7 @@ class LogViewerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        WindowCompat.enableEdgeToEdge(window)
         //if(Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             //enableEdgeToEdge()
         //}
