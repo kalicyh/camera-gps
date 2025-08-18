@@ -63,29 +63,6 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.saschl.cameragps.R
 
-/**
- * The PermissionBox uses a [Box] to show a simple permission request UI when the provided [permission]
- * is revoked or the provided [onGranted] content if the permission is granted.
- *
- * This composable follows the permission request flow but for a complete example check the samples
- * under privacy/permissions
- */
-@Composable
-fun PermissionBox(
-    modifier: Modifier = Modifier,
-    permission: String,
-    description: String? = null,
-    contentAlignment: Alignment = Alignment.TopStart,
-    onGranted: @Composable BoxScope.() -> Unit,
-) {
-    PermissionBox(
-        modifier,
-        permissions = listOf(permission),
-        requiredPermissions = listOf(permission),
-        description,
-        contentAlignment,
-    ) { onGranted() }
-}
 
 /**
  * A variation of [PermissionBox] that takes a list of permissions and only calls [onGranted] when
@@ -316,11 +293,9 @@ fun EnhancedLocationPermissionBox(
     val backgroundGranted = backgroundLocationPermission.status.isGranted
     val allPermissionsGranted = allForegroundGranted && backgroundGranted
 
-    Scaffold { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .then(modifier),
             contentAlignment = if (allPermissionsGranted) {
                 contentAlignment
@@ -337,25 +312,8 @@ fun EnhancedLocationPermissionBox(
                     allForegroundGranted = allForegroundGranted,
                     errorText = errorText
                 )
-
-                /*         FloatingActionButton(
-                             modifier = Modifier
-                                 .align(Alignment.BottomEnd)
-                                 .padding(16.dp),
-                             onClick = {
-                                 val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                                     data = "package:${context.packageName}".toUri()
-                                 }
-                                 context.startActivity(intent)
-                             },
-                         ) {
-                             Icon(imageVector = Icons.Rounded.Settings, contentDescription = stringResource(R.string.app_settings))
-                         }*/
             }
         }
-    }
-
 }
 
 @OptIn(ExperimentalPermissionsApi::class)
