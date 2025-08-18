@@ -109,8 +109,8 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
     override fun onDeviceDisappeared(address: String) {
         super.onDeviceDisappeared(address)
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            Timber.i("Device disappeared oldest api: $address")
-            stopService(Intent(this, LocationSenderService::class.java))
+            Timber.i("Device disappeared oldest api: $address. Service will keep running until destroyed")
+            //stopService(Intent(this, LocationSenderService::class.java))
             return
         }
     }
@@ -119,8 +119,8 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
     override fun onDeviceDisappeared(associationInfo: AssociationInfo) {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
             super.onDeviceDisappeared(associationInfo)
-            Timber.i("Device disappeared old API: ${associationInfo.id}")
-            stopService(Intent(this, LocationSenderService::class.java))
+            Timber.i("Device disappeared old API: ${associationInfo.id}. Service will keep running until destroyed")
+            //stopService(Intent(this, LocationSenderService::class.java))
         }
 
     }
@@ -148,7 +148,10 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
 
         //fusedLocationClient.removeLocationUpdates(locationCallback)
 
-      //  stopService(Intent(this, LocationSenderService::class.java))
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
+            Timber.i("CompanionDeviceService destroyed. Will stop service now")
+            stopService(Intent(this, LocationSenderService::class.java))
+        }
         //  notificationManager.onDeviceDisappeared("Service gone :)")
 
         /*   gatt?.disconnect()
