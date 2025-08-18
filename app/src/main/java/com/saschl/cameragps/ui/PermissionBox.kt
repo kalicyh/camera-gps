@@ -538,13 +538,11 @@ private fun EnhancedPermissionScreen(
  * Gets a user-friendly description for what the permission is used for
  */
 fun getPermissionDescription(permission: String): Int {
-    //val context = LocalContext.current
     return when (permission) {
         Manifest.permission.ACCESS_FINE_LOCATION -> R.string.permission_gps
         Manifest.permission.ACCESS_BACKGROUND_LOCATION -> R.string.permission_background_gps
         Manifest.permission.BLUETOOTH_CONNECT -> R.string.permission_bluetooth
         Manifest.permission.POST_NOTIFICATIONS -> R.string.permission_notifications
-        Manifest.permission.BLUETOOTH_SCAN -> R.string.permission_bluetooth_scan
         else -> -1
     }
 }
