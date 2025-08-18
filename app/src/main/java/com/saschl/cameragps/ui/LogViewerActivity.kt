@@ -3,7 +3,6 @@ package com.saschl.cameragps.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,12 +12,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
@@ -29,10 +34,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
+import com.saschl.cameragps.R
 import com.saschl.cameragps.service.FileTree
 import com.saschl.cameragps.ui.theme.CameraGpsTheme
 import kotlinx.coroutines.delay
@@ -51,7 +60,9 @@ class LogViewerActivity : ComponentActivity() {
 
         setContent {
             CameraGpsTheme {
-                    LogViewerScreen()
+                    LogViewerScreen() {
+                        finish()
+                    }
                 }
             }
     }
@@ -59,7 +70,9 @@ class LogViewerActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LogViewerScreen() {
+private fun LogViewerScreen(
+    onClose: () -> Unit,
+) {
     val scope = rememberCoroutineScope()
     var logs by remember { mutableStateOf<List<String>>(emptyList()) }
     var isRefreshing by remember { mutableStateOf(false) }
@@ -86,13 +99,29 @@ private fun LogViewerScreen() {
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "Application Logs",
-                        style = MaterialTheme.typography.headlineSmall
+                        text = stringResource(R.string.app_name_ui),
+                        //  style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold
                     )
-                }
+                },
+
+                navigationIcon = {
+                    IconButton(
+                        onClick = onClose
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                )
             )
         }
     ) { paddingValues ->

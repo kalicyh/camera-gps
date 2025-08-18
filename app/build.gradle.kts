@@ -13,8 +13,8 @@ android {
         applicationId = "com.saschl.cameragps"
         minSdk = 31
         targetSdk = 36
-        versionCode = 32
-        versionName = "v1.0.29"
+        versionCode = 33
+        versionName = "v1.0.30"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -75,6 +75,9 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.google.play.services.location)
     implementation(libs.accompanist.permissions)
+
+    implementation(libs.material)
+
 
 
     // Room database dependencies

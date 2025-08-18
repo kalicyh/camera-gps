@@ -73,7 +73,7 @@
 
     <!-- Welcome screen strings -->
     <string name="welcome_app_icon_description">Camera GPS App Icon</string>
-    <string name="welcome_title">Welcome to Camera GPS</string>
+    <string name="welcome_title">Welcome to Alpha GPS</string>
     <string name="welcome_subtitle">Sync your camera\'s location with your phone\'s GPS</string>
     <string name="welcome_feature_connect_title">Connect Your Camera</string>
     <string name="welcome_feature_connect_description">Pair your camera with your phone via Bluetooth to establish a connection.</string>
@@ -84,5 +84,7 @@
     <string name="welcome_get_started_button">Get Started</string>
     <string name="welcome_settings_note">You can access this information again from the app settings.</string>
     <string name="associated_devices">Associated Devices:</string>
+    <string name="no_devices_title">No Associated Devices</string>
+    <string name="no_devices_message">Any associated devices will appear here once paired. Tap the button on the top to find and associate your camera.</string>
 
 </resources>

@@ -55,7 +55,7 @@ fun DeviceDetailScreen(
                     )
                 },
 
-                actions = {
+                navigationIcon = {
                     IconButton(
                         onClick = onClose
                     ) {
