@@ -102,6 +102,26 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
         }
     }
 
+    @Deprecated("Deprecated in Java")
+    override fun onDeviceDisappeared(address: String) {
+        super.onDeviceDisappeared(address)
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            Timber.i("Device disappeared oldest api: $address")
+            stopService(Intent(this, LocationSenderService::class.java))
+            return
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onDeviceDisappeared(associationInfo: AssociationInfo) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
+            super.onDeviceDisappeared(associationInfo)
+            Timber.i("Device disappeared old API: ${associationInfo.id}")
+            stopService(Intent(this, LocationSenderService::class.java))
+        }
+
+    }
+
     override fun onCreate() {
         super.onCreate()
         if (Timber.treeCount == 0) {

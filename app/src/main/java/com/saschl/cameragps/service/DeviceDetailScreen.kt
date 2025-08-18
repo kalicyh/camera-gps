@@ -13,24 +13,28 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.saschl.cameragps.R
+import kotlinx.coroutines.launch
 
 @Composable
 @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-fun DeviceDetailScreen(device: BluetoothDevice, onDisassociate: (device: BluetoothDevice) -> Unit, onClose: () -> Unit) {
+fun DeviceDetailScreen(
+    device: BluetoothDevice,
+    onDisassociate: (device: BluetoothDevice) -> Unit,
+    onClose: () -> Unit
+) {
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -51,7 +55,7 @@ fun DeviceDetailScreen(device: BluetoothDevice, onDisassociate: (device: Bluetoo
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState()),
 
-        ) {
+            ) {
             Column(
                 modifier = Modifier
                     .weight(0.6f)
@@ -71,7 +75,7 @@ fun DeviceDetailScreen(device: BluetoothDevice, onDisassociate: (device: Bluetoo
             ) {
                 OutlinedButton(
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = { onDisassociate(device) },
+                    onClick = { scope.launch { onDisassociate(device) } },
                     border = ButtonDefaults.outlinedButtonBorder().copy(
                         brush = SolidColor(MaterialTheme.colorScheme.error),
                     ),
@@ -83,8 +87,13 @@ fun DeviceDetailScreen(device: BluetoothDevice, onDisassociate: (device: Bluetoo
                 }
             }
         }
-    }
 
+        HorizontalDivider(
+            modifier = Modifier.padding(top = 2.dp),
+            thickness = 1.dp,
+            color = MaterialTheme.colorScheme.outline
+        )
+    }
 
 
 }

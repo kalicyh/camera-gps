@@ -16,13 +16,11 @@
 
 package com.saschl.cameragps.service
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
-import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanResult
 import android.companion.AssociationInfo
 import android.companion.AssociationRequest
@@ -35,20 +33,16 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
@@ -72,7 +66,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat.startForegroundService
 import androidx.core.content.getSystemService
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -85,7 +78,6 @@ import com.saschl.cameragps.ui.LogViewerActivity
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.Locale
 import java.util.concurrent.Executor
 import java.util.regex.Pattern
 
@@ -146,7 +138,7 @@ fun CameraDeviceManager() {
         } else {
             EnhancedLocationPermissionBox {
                 DeviceDetailScreen(device = selectedDevice!!, onDisassociate = {
-                    associatedDevices.find { ass -> ass.address == it.address }?.let {
+                    associatedDevices.find { ass -> ass.address == it.address }?.let { it ->
                         Timber.i("Disassociating device: ${it.name} (${it.address})")
                         scope.launch {
 
@@ -198,139 +190,6 @@ private data class DeviceConnectionState(
     }
 }
 
-/*@RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-@Composable
-private fun BLEConnectEffect(
-    device: BluetoothDevice,
-    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
-    onStateChange: (DeviceConnectionState) -> Unit,
-) {
-    val context = LocalContext.current
-    val currentOnStateChange by rememberUpdatedState(onStateChange)
-
-    // Keep the current connection state
-    var state by remember {
-        mutableStateOf(DeviceConnectionState.None)
-    }
-
-    DisposableEffect(lifecycleOwner, device) {
-        // This callback will notify us when things change in the GATT connection so we can update
-        // our state
-        val callback = object : BluetoothGattCallback() {
-            override fun onConnectionStateChange(
-                gatt: BluetoothGatt,
-                status: Int,
-                newState: Int,
-            ) {
-                super.onConnectionStateChange(gatt, status, newState)
-                state = state.copy(gatt = gatt, connectionState = newState)
-                currentOnStateChange(state)
-
-                if (status != BluetoothGatt.GATT_SUCCESS) {
-                    // Here you should handle the error returned in status based on the constants
-                    // https://developer.android.com/reference/android/bluetooth/BluetoothGatt#summary
-                    // For example for GATT_INSUFFICIENT_ENCRYPTION or
-                    // GATT_INSUFFICIENT_AUTHENTICATION you should create a bond.
-                    // https://developer.android.com/reference/android/bluetooth/BluetoothDevice#createBond()
-                    Log.e("BLEConnectEffect", "An error happened: $status")
-                }
-            }
-
-            override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
-                super.onMtuChanged(gatt, mtu, status)
-                state = state.copy(gatt = gatt, mtu = mtu)
-                currentOnStateChange(state)
-            }
-
-            override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-                super.onServicesDiscovered(gatt, status)
-                state = state.copy(services = gatt.services)
-                currentOnStateChange(state)
-            }
-
-            override fun onCharacteristicWrite(
-                gatt: BluetoothGatt?,
-                characteristic: BluetoothGattCharacteristic?,
-                status: Int,
-            ) {
-                super.onCharacteristicWrite(gatt, characteristic, status)
-                state = state.copy(messageSent = status == BluetoothGatt.GATT_SUCCESS)
-                currentOnStateChange(state)
-            }
-
-            @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
-            override fun onCharacteristicRead(
-                gatt: BluetoothGatt,
-                characteristic: BluetoothGattCharacteristic,
-                status: Int,
-            ) {
-                super.onCharacteristicRead(gatt, characteristic, status)
-                doOnRead(characteristic.value)
-            }
-
-            override fun onCharacteristicRead(
-                gatt: BluetoothGatt,
-                characteristic: BluetoothGattCharacteristic,
-                value: ByteArray,
-                status: Int,
-            ) {
-                super.onCharacteristicRead(gatt, characteristic, value, status)
-                doOnRead(value)
-            }
-
-            private fun doOnRead(value: ByteArray) {
-                state = state.copy(messageReceived = value.decodeToString())
-                currentOnStateChange(state)
-            }
-        }
-
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_START) {
-                if (state.gatt != null) {
-                    // If we previously had a GATT connection let's reestablish it
-                    state.gatt?.connect()
-                } else {
-                    // Otherwise create a new GATT connection
-                    state = state.copy(
-                        gatt = device.connectGatt(
-                            context,
-                            false,
-                            callback,
-                            TRANSPORT_AUTO
-                        )
-                    )
-                }
-            } else if (event == Lifecycle.Event.ON_STOP) {
-                // Unless you have a reason to keep connected while in the bg you should disconnect
-                state.gatt?.disconnect()
-            }
-        }
-
-        // Add the observer to the lifecycle
-        lifecycleOwner.lifecycle.addObserver(observer)
-
-        // When the effect leaves the Composition, remove the observer and close the connection
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-            state.gatt?.close()
-            state = DeviceConnectionState.None
-        }
-        onDispose {
-            state.gatt?.close()
-            state = DeviceConnectionState.None
-        }
-    }
-}*/
-
-internal fun Int.toConnectionStateString() = when (this) {
-    BluetoothProfile.STATE_CONNECTED -> "Connected"
-    BluetoothProfile.STATE_CONNECTING -> "Connecting"
-    BluetoothProfile.STATE_DISCONNECTED -> "Disconnected"
-    BluetoothProfile.STATE_DISCONNECTING -> "Disconnecting"
-    else -> "N/A"
-}
-
-
 @SuppressLint("MissingPermission")
 @Composable
 private fun DevicesScreen(
@@ -339,31 +198,10 @@ private fun DevicesScreen(
     onDeviceAssociated: (AssociatedDeviceCompat) -> Unit,
     onConnect: (AssociatedDeviceCompat) -> Unit,
 ) {
-    val scope = rememberCoroutineScope()
     val context = LocalContext.current
-
 
     // State for managing pairing after association
     var pendingPairingDevice by remember { mutableStateOf<AssociatedDeviceCompat?>(null) }
-
-
-    /*    // Simplified pairing management using the new PairingManager
-        var currentPairingDevice by remember { mutableStateOf<AssociatedDeviceCompat?>(null) }
-
-        LaunchedEffect(associatedDevices) {
-            associatedDevices.forEach { device ->
-                scope.launch {
-                    val bluetoothManager = context.getSystemService<BluetoothManager>()
-                    val adapter = bluetoothManager?.adapter
-
-                    if (!isDevicePaired(adapter, device.address)) {
-                        Timber.i("Device ${device.name} not paired, will show pairing dialog")
-                    } else {
-                        Timber.i("Device ${device.name} is already paired")
-                    }
-                }
-            }
-        }*/
 
     Scaffold(
         topBar = {
@@ -396,13 +234,9 @@ private fun DevicesScreen(
                 onSetPairingDevice = { device -> pendingPairingDevice = device })
             {
                 onDeviceAssociated(it)
-                val serviceIntent =
-                    Intent(context.applicationContext, LocationSenderService::class.java)
-                serviceIntent.putExtra("address", it.address.uppercase(Locale.getDefault()))
-                serviceIntent.putExtra("startedManually", true)
-                Timber.i("Starting LocationSenderService for address: $it.address")
+              //  BlePresenceScanner.start(context)
                 startDevicePresenceObservation(deviceManager, it)
-                startForegroundService(context, serviceIntent)
+              //  startForegroundService(context, serviceIntent)
 
             }
             AssociatedDevicesList(
@@ -488,23 +322,24 @@ private fun ScanForDevicesMenu(
             }
 
             CompanionDeviceManager.RESULT_CANCELED -> {
-                errorMessage = "The request was canceled"
+                errorMessage = context.getString(R.string.the_request_was_canceled)
             }
 
             CompanionDeviceManager.RESULT_INTERNAL_ERROR -> {
-                errorMessage = "Internal error happened"
+                errorMessage = context.getString(R.string.internal_error_happened)
             }
 
             CompanionDeviceManager.RESULT_DISCOVERY_TIMEOUT -> {
-                errorMessage = "No device matching the given filter were found"
+                errorMessage =
+                    context.getString(R.string.no_device_matching_the_given_filter_were_found)
             }
 
             CompanionDeviceManager.RESULT_USER_REJECTED -> {
-                errorMessage = "The user explicitly declined the request"
+                errorMessage = context.getString(R.string.the_user_explicitly_declined_the_request)
             }
 
             else -> {
-                errorMessage = "Unknown error"
+                errorMessage = context.getString(R.string.unknown_error)
             }
         }
     }
@@ -557,7 +392,6 @@ private fun AssociatedDevicesList(
     val context = LocalContext.current
     val bluetoothManager = context.getSystemService<BluetoothManager>()
     val adapter = bluetoothManager?.adapter
-
 
     Column {
         LazyColumn(
@@ -654,6 +488,7 @@ private fun AssociatedDevicesList(
             }
         }
         // FIXME pairing logic needs to be refactored so that it can be used here as well
+        // This is for adding pairing logic to the "Pair new camera" button as the last element (TBC)
         /* Row(
              Modifier
                  .fillMaxWidth()
@@ -770,6 +605,7 @@ private suspend fun requestDeviceAssociation(
         override fun onAssociationCreated(associationInfo: AssociationInfo) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 Timber.i("Association created: ${associationInfo.displayName} (${associationInfo.id})")
+                startDevicePresenceObservation(deviceManager, associationInfo.toAssociatedDevice())
             }
         }
 

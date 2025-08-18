@@ -84,11 +84,12 @@ class LocationSenderService : Service() {
                 Timber.e("An error happened: $status")
                 fusedLocationClient.removeLocationUpdates(locationCallback)
 
+                //BlePresenceScanner.start(applicationContext)
                 if (startedManually && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     stopSelf()
                 }
             } else {
-                Timber.i("Connected to device")
+                Timber.i("Connected to device %d", status)
                 gatt.discoverServices()
 
             }
@@ -197,7 +198,8 @@ class LocationSenderService : Service() {
     @SuppressLint("MissingPermission")
     override fun onDestroy() {
         super.onDestroy()
-        // fusedLocationClient.removeLocationUpdates(locationCallback)
+        //fusedLocationClient.removeLocationUpdates(locationCallback)
+        gatt1?.disconnect()
         gatt1?.close()
         Timber.i("Destroyed service")
     }

@@ -55,4 +55,10 @@
     <string name="_2_go_to_camera_settings_and_enable_bluetooth_pairing_mode">2. Go to camera settings and enable Bluetooth/Pairing mode</string>
     <string name="_3_make_sure_the_camera_is_discoverable">3. Make sure the camera is discoverable</string>
     <string name="once_your_camera_is_ready_tap_continue_to_start_pairing">\nOnce your camera is ready, tap \'Continue\' to start pairing.</string>
+    <string name="permission_bluetooth_scan">Bluetooth Scanning</string>
+    <string name="the_request_was_canceled">The request was canceled</string>
+    <string name="internal_error_happened">Internal error happened</string>
+    <string name="no_device_matching_the_given_filter_were_found">No device matching the given filter were found</string>
+    <string name="the_user_explicitly_declined_the_request">The user explicitly declined the request</string>
+    <string name="unknown_error">Unknown error</string>
 </resources>

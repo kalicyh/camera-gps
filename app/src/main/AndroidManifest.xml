@@ -18,8 +18,8 @@
 
     <!-- Bluetooth permissions -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+   <!-- <uses-permission android:name="android.permission.BLUETOOTH_SCAN"/>-->
+<!--    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />-->
 
     <!-- Companion device permissions -->
     <uses-permission android:name="android.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE" />
@@ -69,6 +69,19 @@
             android:name=".service.LocationSenderService"
             android:foregroundServiceType="location|connectedDevice">
         </service>
+
+  <!--      <receiver
+            android:name=".service.legacy.BlePresenceReceiver"
+            android:exported="false" />
+
+        &lt;!&ndash; Re‑start the scan after reboot &ndash;&gt;
+        <receiver
+            android:name=".service.legacy.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>-->
     </application>
 
 </manifest>
