@@ -70,4 +70,8 @@
     <string name="internal_error_happened">Interner Fehler</string>
     <string name="no_device_matching_the_given_filter_were_found">Kein Gerät mit dem definierten Filter gefunden</string>
     <string name="the_user_explicitly_declined_the_request">Sie haben die Anfrage abgelehnt. Bitte erneut versuchen.</string>
+    <string name="settings">Einstellungen</string>
+    <string name="back">Zurück</string>
+    <string name="app_controls">App Einstellungen</string>
+    <string name="enable_app">Aktiviere Standortübertragung</string>
 </resources>
