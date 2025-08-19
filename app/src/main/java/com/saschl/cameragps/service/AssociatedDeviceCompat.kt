@@ -29,7 +29,7 @@ import java.util.Locale
 data class AssociatedDeviceCompat(
     val id: Int,
     val address: String,
-    val name: String,
+    var name: String,
     val device: BluetoothDevice?,
     var isPaired: Boolean = false
 )

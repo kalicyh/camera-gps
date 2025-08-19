@@ -46,6 +46,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -86,6 +87,7 @@ import com.saschl.cameragps.service.pairing.startDevicePresenceObservation
 import com.saschl.cameragps.ui.EnhancedLocationPermissionBox
 import com.saschl.cameragps.ui.LogViewerActivity
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.concurrent.Executor
@@ -102,7 +104,7 @@ fun CameraDeviceManager(
     val deviceManager = context.getSystemService<CompanionDeviceManager>()
     val adapter = context.getSystemService<BluetoothManager>()?.adapter
     var selectedDevice by remember {
-        mutableStateOf<BluetoothDevice?>(null)
+        mutableStateOf<AssociatedDeviceCompat?>(null)
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -140,14 +142,18 @@ fun CameraDeviceManager(
                 DevicesScreen(
                     deviceManager,
                     onDeviceAssociated = {
-                        startDevicePresenceObservation(deviceManager, it)
-                        associatedDevices =
-                            associatedDevices.filter { associatedDevice -> associatedDevice != it }; it.isPaired =
-                        true; associatedDevices = associatedDevices + it
+                        scope.launch {
+                            delay(1000) // give the system a short time to breathe
+                            startDevicePresenceObservation(deviceManager, it)
+                            associatedDevices =
+                                associatedDevices.filter { associatedDevice -> associatedDevice != it }; it.isPaired =
+                            true; associatedDevices = associatedDevices + it
+                        }
+
                     },
                     onConnect = { device ->
                         selectedDevice =
-                            (device.device ?: adapter.getRemoteDevice(device.address))
+                            (device)
 
                     },
                     associatedDevices = associatedDevices,
@@ -156,7 +162,7 @@ fun CameraDeviceManager(
             }
         } else {
             EnhancedLocationPermissionBox {
-                DeviceDetailScreen(device = selectedDevice!!, onDisassociate = {
+                DeviceDetailScreen(device = selectedDevice!!, deviceManager, onDisassociate = {
                     associatedDevices.find { ass -> ass.address == it.address }?.let { it ->
                         Timber.i("Disassociating device: ${it.name} (${it.address})")
                         scope.launch {
@@ -221,6 +227,8 @@ private fun DevicesScreen(
 ) {
     val context = LocalContext.current
 
+    val scope = rememberCoroutineScope()
+
     // State for managing pairing after association
     var pendingPairingDevice by remember { mutableStateOf<AssociatedDeviceCompat?>(null) }
 
@@ -262,25 +270,6 @@ private fun DevicesScreen(
                     titleContentColor = MaterialTheme.colorScheme.onSurface,
                 )
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    context.startActivity(
-                        Intent(
-                            context,
-                            LogViewerActivity::class.java
-                        )
-                    )
-                },
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    painterResource(R.drawable.baseline_view_list_24),
-                    contentDescription = "View Logs",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
         }
     ) { innerPadding ->
 
@@ -436,9 +425,8 @@ private fun ScanForDevicesMenu(
                 modifier = Modifier.weight(0.7f),
                 onClick = {
                     scope.launch {
-                        val associatedDevices = deviceManager.getAssociatedDevices()
                         val intentSender =
-                            requestDeviceAssociation(deviceManager, associatedDevices)
+                            requestDeviceAssociation(deviceManager)
                         launcher.launch(IntentSenderRequest.Builder(intentSender).build())
                     }
                 },
@@ -522,6 +510,10 @@ private fun AssociatedDevicesList(
                 } catch (e: SecurityException) {
                     false
                 }
+
+                if(device.name == "N/A") {
+                    device.name = adapter?.getRemoteDevice(device.address)!!.name
+                }
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -592,7 +584,7 @@ private fun AssociatedDevicesList(
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "Hi"
+                            contentDescription = "Show details"
                         )
 
                     }
@@ -693,8 +685,7 @@ private fun Intent.getAssociationResult(): AssociatedDeviceCompat? {
 }
 
 private suspend fun requestDeviceAssociation(
-    deviceManager: CompanionDeviceManager,
-    associatedDevices: List<AssociatedDeviceCompat> = emptyList()
+    deviceManager: CompanionDeviceManager
 ): IntentSender {
     // Match only Bluetooth devices whose service UUID matches this pattern.
     // For this demo we will match our GATTServerSample

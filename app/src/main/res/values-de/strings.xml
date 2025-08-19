@@ -74,6 +74,7 @@
     <string name="back">Zurück</string>
     <string name="app_controls">App Einstellungen</string>
     <string name="enable_app">Aktiviere Standortübertragung</string>
+    <string name="enable_device">Gerät aktivieren</string>
     <string name="associated_devices">Verknüpfte Geräte:</string>
     <string name="no_devices_title">Keine verknüpften Geräte</string>
     <string name="no_devices_message">Alle verknüpften Geräte werden hier angezeigt, sobald sie gekoppelt sind. Tippen Sie auf die Schaltfläche oben, um Ihre Kamera zu finden und zu verknüpfen.</string>

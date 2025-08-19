@@ -56,6 +56,7 @@
     <string name="app_controls">App Controls</string>
     <string name="enable_app">Enable Location Transmission</string>
     <string name="enable_app_description">Turn the app functionality on or off. Might need a restart of your camera</string>
+    <string name="enable_device">Enable device functionality</string>
 
     <string name="not_paired_tap_to_pair_again">Not paired, tap device to pair again</string>
     <string name="to_pair_with_your_camera_please">To pair with your camera \'%1$s\', please:</string>

@@ -1,7 +1,8 @@
 package com.saschl.cameragps.service
 
 import android.Manifest
-import android.bluetooth.BluetoothDevice
+import android.companion.CompanionDeviceManager
+import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.layout.Arrangement
@@ -22,27 +23,43 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.saschl.cameragps.R
+import com.saschl.cameragps.service.pairing.startDevicePresenceObservation
+import com.saschl.cameragps.utils.PreferencesManager
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
 fun DeviceDetailScreen(
-    device: BluetoothDevice,
-    onDisassociate: (device: BluetoothDevice) -> Unit,
+    device: AssociatedDeviceCompat,
+    deviceManger: CompanionDeviceManager,
+    onDisassociate: (device: AssociatedDeviceCompat) -> Unit,
     onClose: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    // Track device enabled state
+    var isDeviceEnabled by remember {
+        mutableStateOf(PreferencesManager.isDeviceEnabled(context, device.address))
+    }
 
     Scaffold(
         topBar = {
@@ -90,6 +107,31 @@ fun DeviceDetailScreen(
             ) {
 
                 Text(text = "Name: ${device.name} (${device.address})")
+
+                // Device toggle switch
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.enable_device),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Switch(
+                        checked = isDeviceEnabled,
+                        onCheckedChange = { enabled ->
+                            isDeviceEnabled = enabled
+                            PreferencesManager.setDeviceEnabled(context, device.address, enabled)
+                            if(!enabled) {
+                                deviceManger.stopObservingDevicePresence(device.address)
+                                context.stopService(Intent(context.applicationContext, LocationSenderService::class.java))
+                            } else {
+                                startDevicePresenceObservation(deviceManger, device)
+                            }
+                        }
+                    )
+                }
             }
 
             Column(
