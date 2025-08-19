@@ -32,22 +32,15 @@ fun WelcomeScreen(
     onGetStarted: () -> Unit
 ) {
     Scaffold { innerPadding ->
-
-
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
+            .padding(innerPadding)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // App icon/logo
-        Image(
-            painter = painterResource(R.drawable.baseline_photo_camera_24),
-            contentDescription = stringResource(R.string.welcome_app_icon_description),
-            modifier = Modifier.size(120.dp)
-        )
+
 
         Spacer(modifier = Modifier.height(24.dp))
 
