@@ -22,6 +22,8 @@ I also only have access to an Alpha 6400, but it should probably work with most 
 
 
 
-<img width="250" alt="image" src="https://github.com/user-attachments/assets/39d0d1b6-7bec-40ee-96e3-183bc0ee3b35" />
 
-<img width="250" alt="Image pairing" src="https://github.com/user-attachments/assets/b4315cb9-a817-4ff5-93db-21032e47e939"/>
+<img width="242" height="512" alt="unnamed (1)" src="https://github.com/user-attachments/assets/0ee0e403-70a1-431c-bb68-99ddf03b95c3" />
+
+<img width="242" height="512" alt="unnamed (3)" src="https://github.com/user-attachments/assets/7acf30f5-3bbd-4d66-a5c0-bd779c47ccc8" />
+<img width="242" height="512" alt="unnamed (4)" src="https://github.com/user-attachments/assets/60c69256-10be-4422-8864-525b146d174f" />
