@@ -88,4 +88,11 @@
     <string name="no_devices_title">No Associated Devices</string>
     <string name="no_devices_message">Any associated devices will appear here once paired. Tap the button on the top to find and associate your camera.</string>
 
+    <!-- Battery optimization dialog strings -->
+    <string name="battery_optimization_title">Battery Optimization</string>
+    <string name="battery_optimization_message">To ensure reliable GPS sync with your camera, please disable battery optimization for this app. This prevents the system from limiting background activity.</string>
+    <string name="battery_optimization_proceed">Open Settings</string>
+    <string name="battery_optimization_cancel">Cancel</string>
+    <string name="battery_optimization_dont_show">Don\'t show again</string>
+
 </resources>
