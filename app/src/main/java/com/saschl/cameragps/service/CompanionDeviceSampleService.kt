@@ -85,6 +85,12 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
 
         if (event.event == DevicePresenceEvent.EVENT_BLE_DISAPPEARED) {
             Timber.i("Device disappeared new API: ${event.associationId}")
+
+            // Request graceful shutdown instead of immediate termination
+            val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
+                action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
+            }
+            startService(shutdownIntent)
         }
     }
 
@@ -123,9 +129,16 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
     @SuppressLint("MissingPermission")
     override fun onDestroy() {
         super.onDestroy()
+        Timber.i("CompanionDeviceService destroyed. Will request graceful shutdown now")
 
-        Timber.i("CompanionDeviceService destroyed. Will stop service now")
-        stopService(Intent(this, LocationSenderService::class.java))
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
+            // Request graceful shutdown instead of immediate termination
+            val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
+                action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
+            }
+            startService(shutdownIntent)
+        }
+
     }
 
 

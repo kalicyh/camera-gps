@@ -12,6 +12,7 @@ import android.content.pm.ServiceInfo
 import android.location.Location
 import android.os.Binder
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.ServiceCompat
@@ -26,9 +27,9 @@ import com.saschl.cameragps.notification.NotificationsHelper
 import timber.log.Timber
 import java.nio.ByteBuffer
 import java.time.Instant
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.util.TimeZone
 import java.util.UUID
 
 class LocationSenderService : Service() {
@@ -46,6 +47,11 @@ class LocationSenderService : Service() {
 
     private var startedManually: Boolean = false
 
+    // Shutdown timer functionality
+    private val shutdownHandler = Handler(Looper.getMainLooper())
+    private var shutdownRunnable: Runnable? = null
+    private var isShutdownRequested = false
+
     companion object {
 
         // Random UUID for our service known between the client and server to allow communication
@@ -53,6 +59,13 @@ class LocationSenderService : Service() {
 
         // Same as the service but for the characteristic
         val CHARACTERISTIC_UUID: UUID = UUID.fromString("0000dd11-0000-1000-8000-00805f9b34fb")
+
+        // Actions for controlling the service
+        const val ACTION_REQUEST_SHUTDOWN = "com.saschl.cameragps.ACTION_REQUEST_SHUTDOWN"
+        const val ACTION_NORMAL_START = "com.saschl.cameragps.ACTION_NORMAL_START"
+
+        // Shutdown delay in milliseconds (1 minute)
+        private const val SHUTDOWN_DELAY_MS = 60 * 1000L
     }
 
     private val bluetoothManager: BluetoothManager by lazy {
@@ -162,6 +175,15 @@ class LocationSenderService : Service() {
 
     @SuppressLint("MissingPermission")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Check if this is a shutdown request
+        if (intent?.action == ACTION_REQUEST_SHUTDOWN) {
+            requestShutdown()
+            return START_NOT_STICKY
+        }
+
+        // Cancel any pending shutdown since we're starting normally
+        cancelShutdown()
+
         startAsForegroundService()
 
         this.startId = startId;
@@ -171,7 +193,6 @@ class LocationSenderService : Service() {
         var device: BluetoothDevice? = null
 
         device = bluetoothManager.adapter.getRemoteDevice(address)
-
 
         if (gatt1 != null) {
             Timber.i("Gatt will be reused")
@@ -186,6 +207,10 @@ class LocationSenderService : Service() {
     @SuppressLint("MissingPermission")
     override fun onDestroy() {
         super.onDestroy()
+
+        // Clean up shutdown timer
+        cancelShutdown()
+
         //fusedLocationClient.removeLocationUpdates(locationCallback)
         gatt1?.disconnect()
         gatt1?.close()
@@ -258,41 +283,35 @@ class LocationSenderService : Service() {
         gatt: BluetoothGatt?,
         characteristic: BluetoothGattCharacteristic?,
     ) {
+        val timeZoneId = ZoneId.systemDefault()
+
+        val paddingBytes = ByteArray(65)
+        val fixedBytes = byteArrayOf(
+            0x00, 0x5D, 0x08, 0x02, 0xFC.toByte(), 0x03, 0x00, 0x00, 0x10, 0x10, 0x10
+        )
+
+        // taken from https://github.com/mlapaglia/AlphaSync/blob/main/app/src/main/java/com.alphasync/sonycommand/SonyCommandGenerator.kt
+        val locationBytes = getConvertedCoordinates(locationResultVar)
+        val dateBytes = getConvertedDate()
+        val timeZoneOffsetBytes = getConvertedTimeZoneOffset(timeZoneId)
+        val dstOffsetBytes = getConvertedDstOffset(timeZoneId)
+
         val data = ByteArray(95)
+        var currentBytePosition = 0
 
-        data[0] = 0x00
-        data[1] = 0x5D.toByte()
+        System.arraycopy(fixedBytes, 0, data, currentBytePosition, fixedBytes.size)
+        currentBytePosition += fixedBytes.size
+        System.arraycopy(locationBytes, 0, data, currentBytePosition, locationBytes.size)
+        currentBytePosition += locationBytes.size
+        System.arraycopy(dateBytes, 0, data, currentBytePosition, dateBytes.size)
+        currentBytePosition += dateBytes.size
+        System.arraycopy(paddingBytes, 0, data, currentBytePosition, paddingBytes.size)
+        currentBytePosition += paddingBytes.size
+        System.arraycopy(timeZoneOffsetBytes, 0, data, currentBytePosition, timeZoneOffsetBytes.size)
+        currentBytePosition += timeZoneOffsetBytes.size
+        System.arraycopy(dstOffsetBytes, 0, data, currentBytePosition, dstOffsetBytes.size)
 
-
-        // bytes 2-4
-        val fixedData = "0802FC".chunked(2)
-            .map { it.toInt(16).toByte() }
-            .toByteArray()
-        System.arraycopy(fixedData, 0, data, 2, fixedData.size)
-
-
-        // transmit timezone offset? NO
-        data[5] = 0x03.toByte()
-
-        val fixedData2 = "0000101010".chunked(2)
-            .map { it.toInt(16).toByte() }
-            .toByteArray()
-
-        System.arraycopy(fixedData2, 0, data, 6, fixedData2.size)
-
-        // position information
-        val latitude = locationResultVar.latitude
-        val longitude = locationResultVar.longitude
-        val locationData = setLocation(latitude, longitude)
-        System.arraycopy(locationData, 0, data, 11, locationData.size)
-
-
-        // here UTC time must be used
-        val dateData = setDate(TimeZone.getTimeZone("UTC").toZoneId())
-        System.arraycopy(dateData, 0, data, 19, dateData.size)
-
-
-        val hex = data.toHex()
+        //val hex = data.toHex()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (characteristic != null) {
@@ -311,6 +330,75 @@ class LocationSenderService : Service() {
             }
         }
     }
+
+    /**
+     * Requests a graceful shutdown with a 1-minute delay
+     */
+    fun requestShutdown() {
+        if (isShutdownRequested) {
+            Timber.i("Shutdown already requested, ignoring duplicate request")
+            return
+        }
+
+        isShutdownRequested = true
+        Timber.i("Shutdown requested, will terminate in ${SHUTDOWN_DELAY_MS / 1000} seconds")
+
+        shutdownRunnable = Runnable {
+            Timber.i("Shutdown timer expired, terminating service")
+            stopSelf()
+        }
+
+        shutdownHandler.postDelayed(shutdownRunnable!!, SHUTDOWN_DELAY_MS)
+    }
+
+    /**
+     * Cancels any pending shutdown
+     */
+    private fun cancelShutdown() {
+        if (isShutdownRequested) {
+            Timber.i("Cancelling pending shutdown")
+            shutdownRunnable?.let { shutdownHandler.removeCallbacks(it) }
+            shutdownRunnable = null
+            isShutdownRequested = false
+        }
+    }
+}
+
+private fun getConvertedDstOffset(timezoneId: ZoneId): ByteArray {
+    val offsetDstMin = timezoneId.rules.getDaylightSavings(Instant.now()).toMinutes().toInt()
+    return offsetDstMin.toShort().toByteArray()
+}
+
+private fun getConvertedTimeZoneOffset(timezoneId: ZoneId): ByteArray {
+    val dt = LocalDateTime.now()
+    val offsetMin = timezoneId.rules.getOffset(dt).totalSeconds / 60
+    return offsetMin.toShort().toByteArray()
+}
+
+private fun Short.toByteArray(): ByteArray {
+    return byteArrayOf((this.toInt() shr 8).toByte(), this.toByte())
+}
+
+
+private fun getConvertedCoordinates(location: Location): ByteArray {
+    val latitude = (location.latitude * 10000000).toInt()
+    val latitudeBytes = ByteBuffer.allocate(Int.SIZE_BYTES).putInt(latitude).array()
+
+    val longitude = (location.longitude * 10000000).toInt()
+    val longitudeBytes = ByteBuffer.allocate(Int.SIZE_BYTES).putInt(longitude).array()
+
+    return latitudeBytes + longitudeBytes
+}
+
+private fun getConvertedDate(): ByteArray {
+    val currentDateTime = ZonedDateTime.ofInstant(Instant.now(), ZoneId.of("UTC"))
+    val yearBytes = currentDateTime.year.toShort().toByteArray()
+
+    return byteArrayOf(
+        yearBytes[0], yearBytes[1],
+        currentDateTime.monthValue.toByte(), currentDateTime.dayOfMonth.toByte(),
+        currentDateTime.hour.toByte(), currentDateTime.minute.toByte(), currentDateTime.second.toByte()
+    )
 }
 
 fun ByteArray.toHex(): String = joinToString(separator = "") { eachByte -> "%02x".format(eachByte) }

@@ -521,9 +521,10 @@ private fun AssociatedDevicesList(
                         .clickable(
                             true,
                             onClick = {
-                                if (isPaired) onConnect(device) else onSetPendingPairingDevice(
+                               /* if (isPaired) onConnect(device) else onSetPendingPairingDevice(
                                     device
-                                )
+                                )*/
+                                onConnect(device)
                             }),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
@@ -546,7 +547,7 @@ private fun AssociatedDevicesList(
                     ) {
                         Text(fontWeight = FontWeight.Bold, text = device.name)
 
-                        if (!isPaired) {
+                        /*if (!isPaired) {
                             Text(
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodySmall,
@@ -555,12 +556,15 @@ private fun AssociatedDevicesList(
 
                             // TODO refactor into separate method
                             // TODO extract logic to service properly this should not be in UI
-                            context.stopService(
-                                Intent(
-                                    context.applicationContext,
-                                    LocationSenderService::class.java
-                                )
-                            )
+                            // Request graceful shutdown instead of immediate termination
+                            val shutdownIntent = Intent(
+                                context.applicationContext,
+                                LocationSenderService::class.java
+                            ).apply {
+                                action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
+                            }
+                            context.startService(shutdownIntent)
+
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
                                 deviceManager.stopObservingDevicePresence(
                                     ObservingDevicePresenceRequest.Builder()
@@ -572,7 +576,7 @@ private fun AssociatedDevicesList(
                                 @Suppress("DEPRECATION")
                                 deviceManager.stopObservingDevicePresence(device.address)
                             }
-                        }
+                        }*/
 
                     }
                     Column(
