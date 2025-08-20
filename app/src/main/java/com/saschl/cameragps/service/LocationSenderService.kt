@@ -64,6 +64,11 @@ class LocationSenderService : Service() {
         val CHARACTERISTIC_UUID: UUID = UUID.fromString("0000dd11-0000-1000-8000-00805f9b34fb")
         val CHARACTERISTIC_READ_UUID: UUID = UUID.fromString("0000dd21-0000-1000-8000-00805f9b34fb")
 
+        val CHARACTERISTIC_ENABLE_GPS_COMMAND: UUID = UUID.fromString("0000dd30-0000-1000-8000-00805f9b34fb")
+        val CHARACTERISTIC_ENABLED_GPS_COMMAND: UUID = UUID.fromString("0000dd31-0000-1000-8000-00805f9b34fb")
+
+
+
 
         // Actions for controlling the service
         const val ACTION_REQUEST_SHUTDOWN = "com.saschl.cameragps.ACTION_REQUEST_SHUTDOWN"
@@ -123,7 +128,19 @@ class LocationSenderService : Service() {
             // If the GATTServerSample service is found, get the characteristic
             characteristic = service?.getCharacteristic(CHARACTERISTIC_UUID)
 
-            val readCharacteristic = service?.getCharacteristic(CHARACTERISTIC_READ_UUID);
+            val readCharacteristic = service?.getCharacteristic(CHARACTERISTIC_READ_UUID)
+
+            //enable GPS if needed
+            service?.getCharacteristic(CHARACTERISTIC_ENABLE_GPS_COMMAND)
+                ?.let { enableGpsCharacteristic ->
+                    Timber.i("Enabling GPS characteristic: ${enableGpsCharacteristic.uuid}")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        gatt.writeCharacteristic(enableGpsCharacteristic, byteArrayOf(0x01), BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+                    } else {
+                        enableGpsCharacteristic.value = byteArrayOf(0x01)
+                        gatt.writeCharacteristic(enableGpsCharacteristic)
+                    }
+                }
 
             gatt.readCharacteristic(readCharacteristic)
             fusedLocationClient.lastLocation.addOnSuccessListener {
@@ -142,12 +159,23 @@ class LocationSenderService : Service() {
 
         }
 
+        @SuppressLint("MissingPermission")
         override fun onCharacteristicWrite(
             gatt: BluetoothGatt?,
             characteristic: BluetoothGattCharacteristic?,
             status: Int,
         ) {
             super.onCharacteristicWrite(gatt, characteristic, status)
+            if(characteristic?.uuid == CHARACTERISTIC_ENABLE_GPS_COMMAND) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    gatt?.writeCharacteristic(characteristic, byteArrayOf(0x01), BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+                } else {
+                    characteristic.value = byteArrayOf(0x01)
+                    gatt?.writeCharacteristic(characteristic)
+                }
+            } else if (characteristic?.uuid == CHARACTERISTIC_ENABLED_GPS_COMMAND) {
+                Timber.i("GPS flag enabled on device, will now send data")
+            }
             Timber.i("onCharacteristic write status: $status")
         }
 
