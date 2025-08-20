@@ -31,11 +31,11 @@ import com.saschl.cameragps.R
 fun WelcomeScreen(
     onGetStarted: () -> Unit
 ) {
-    Scaffold { innerPadding ->
+    Scaffold {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(innerPadding)
+            .padding(24.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
