@@ -127,6 +127,7 @@ class LocationSenderService : Service() {
             status: Int,
         ) {
             super.onCharacteristicWrite(gatt, characteristic, status)
+            Timber.i("onCharacteristic write status: $status")
             //     state = state.copy(messageSent = status == BluetoothGatt.GATT_SUCCESS)
             //     currentOnStateChange(state)
         }
@@ -154,8 +155,7 @@ class LocationSenderService : Service() {
         }
 
         private fun doOnRead(value: ByteArray) {
-            //     state = state.copy(messageReceived = value.decodeToString())
-            //      currentOnStateChange(state)
+        
         }
     }
 
@@ -170,22 +170,11 @@ class LocationSenderService : Service() {
         startedManually = intent?.getBooleanExtra("startedManually", false)?: false
         var device: BluetoothDevice? = null
 
-        // if(address == null)
-
-        /* if(gatt1?.)*/
-
-        /*   bluetoothManager.getConnectedDevices(BluetoothGatt.GATT).forEach {
-               if (it.address == address) {
-                   device = it
-               }
-           }*/
-
         device = bluetoothManager.adapter.getRemoteDevice(address)
 
 
         if (gatt1 != null) {
             Timber.i("Gatt will be reused")
-            //     gatt1?.connect()
         } else {
             Timber.i("Gatt will be created")
 
@@ -214,11 +203,6 @@ class LocationSenderService : Service() {
             val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
             Thread.setDefaultUncaughtExceptionHandler(GlobalExceptionHandler(defaultHandler))
         }
-        /* if (missingPermissions()) {
-             Log.e(CompanionDeviceSampleService::class.java.toString(),"aaa");
-             return
-         }*/
-
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         locationCallback = object : LocationCallback() {
@@ -309,7 +293,6 @@ class LocationSenderService : Service() {
 
 
         val hex = data.toHex()
-       // Timber.i("Sending data: $hex with location $locationResultVar")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (characteristic != null) {
@@ -318,13 +301,13 @@ class LocationSenderService : Service() {
                     data,
                     BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT,
                 )
-               // Timber.i("Write result: $result")
+                Timber.i("Write result: $result")
             }
         } else {
             if (characteristic != null) {
                 characteristic.value = data
                 val result = gatt?.writeCharacteristic(characteristic)
-              //  Timber.i("Write result: $result")
+                Timber.i("Write result: $result")
             }
         }
     }

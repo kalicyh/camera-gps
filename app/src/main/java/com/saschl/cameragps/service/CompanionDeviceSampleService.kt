@@ -1,19 +1,3 @@
-/*
- * Copyright 2023 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.saschl.cameragps.service
 
 import android.Manifest
@@ -101,7 +85,6 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
 
         if (event.event == DevicePresenceEvent.EVENT_BLE_DISAPPEARED) {
             Timber.i("Device disappeared new API: ${event.associationId}")
-            stopService(Intent(this, LocationSenderService::class.java))
         }
     }
 
@@ -110,7 +93,6 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
         super.onDeviceDisappeared(address)
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             Timber.i("Device disappeared oldest api: $address. Service will keep running until destroyed")
-            //stopService(Intent(this, LocationSenderService::class.java))
             return
         }
     }
@@ -120,7 +102,6 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
             super.onDeviceDisappeared(associationInfo)
             Timber.i("Device disappeared old API: ${associationInfo.id}. Service will keep running until destroyed")
-            //stopService(Intent(this, LocationSenderService::class.java))
         }
 
     }
@@ -143,25 +124,9 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
     override fun onDestroy() {
         super.onDestroy()
 
-        //   fusedLocationClient.removeLocationUpdates(locationCallback)
-        // timerJob.cancel()
-
-        //fusedLocationClient.removeLocationUpdates(locationCallback)
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
-            Timber.i("CompanionDeviceService destroyed. Will stop service now")
-            stopService(Intent(this, LocationSenderService::class.java))
-        }
-        //  notificationManager.onDeviceDisappeared("Service gone :)")
-
-        /*   gatt?.disconnect()
-           gatt?.close()*/ }
-
-    /*  override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-          super.onStartCommand(intent, flags, startId)
-
-          return START_STICKY
-      }*/
+        Timber.i("CompanionDeviceService destroyed. Will stop service now")
+        stopService(Intent(this, LocationSenderService::class.java))
+    }
 
 
     /**
