@@ -48,33 +48,10 @@ fun BatteryOptimizationDialog(
             )
         },
         confirmButton = {
-            Row(
-                horizontalArrangement = Arrangement.End,
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                TextButton(
-                    onClick = {
-                        Timber.i("Battery optimization dialog cancelled")
-                        onDismiss()
-                    }
-                ) {
-                    Text(stringResource(R.string.battery_optimization_cancel))
-                }
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                TextButton(
-                    onClick = {
-                        PreferencesManager.setBatteryOptimizationDialogDismissed(context, true)
-                        Timber.i("Battery optimization dialog dismissed permanently")
-                        onDismiss()
-                    }
-                ) {
-                    Text(stringResource(R.string.battery_optimization_dont_show))
-                }
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
                 TextButton(
                     onClick = {
                         try {
@@ -99,12 +76,34 @@ fun BatteryOptimizationDialog(
                             }
                         }
                         onDismiss()
-                    }
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = stringResource(R.string.battery_optimization_proceed),
                         fontWeight = FontWeight.Medium
                     )
+                }
+                
+                TextButton(
+                    onClick = {
+                        PreferencesManager.setBatteryOptimizationDialogDismissed(context, true)
+                        Timber.i("Battery optimization dialog dismissed permanently")
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.battery_optimization_dont_show))
+                }
+                
+                TextButton(
+                    onClick = {
+                        Timber.i("Battery optimization dialog cancelled")
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.battery_optimization_cancel))
                 }
             }
         }
