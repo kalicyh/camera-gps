@@ -294,7 +294,7 @@ class LocationSenderService : Service() {
 
         val paddingBytes = ByteArray(65)
         val fixedBytes = byteArrayOf(
-            0x00, 0x5D, 0x08, 0x02, 0xFC.toByte(), 0x03, 0x00, 0x00, 0x10, 0x10, 0x10
+            0x00, if (shouldSendTimeZoneAndDst) 0x5D else 0x59, 0x08, 0x02, 0xFC.toByte(), if (shouldSendTimeZoneAndDst) 0x03 else 0x00, 0x00, 0x00, 0x10, 0x10, 0x10
         )
 
         // taken from https://github.com/mlapaglia/AlphaSync/blob/main/app/src/main/java/com.alphasync/sonycommand/SonyCommandGenerator.kt
@@ -303,7 +303,7 @@ class LocationSenderService : Service() {
         val timeZoneOffsetBytes = getConvertedTimeZoneOffset(timeZoneId)
         val dstOffsetBytes = getConvertedDstOffset(timeZoneId)
 
-        var data: ByteArray;
+        var data: ByteArray
 
         if (shouldSendTimeZoneAndDst) {
             data = ByteArray(95)
@@ -385,6 +385,9 @@ class LocationSenderService : Service() {
 }
 
 private fun getConvertedDstOffset(timezoneId: ZoneId): ByteArray {
+    if(!timezoneId.rules.isDaylightSavings(Instant.now())) {
+        return byteArrayOf(0, 0) // No DST offset
+    }
     val offsetDstMin = timezoneId.rules.getDaylightSavings(Instant.now()).toMinutes().toInt()
     return offsetDstMin.toShort().toByteArray()
 }
@@ -426,25 +429,3 @@ private fun getConvertedDate(): ByteArray {
 }
 
 fun ByteArray.toHex(): String = joinToString(separator = "") { eachByte -> "%02x".format(eachByte) }
-
-fun setLocation(latitude: Double, longitude: Double): ByteArray {
-    val myLat = (latitude * 1e7).toInt()
-    val myLng = (longitude * 1e7).toInt()
-    val myLatByte = ByteBuffer.allocate(4).putInt(myLat).array()
-    val myLngByte = ByteBuffer.allocate(4).putInt(myLng).array()
-    return myLatByte + myLngByte
-}
-
-fun setDate(zoneId: ZoneId): ByteArray {
-    val now = ZonedDateTime.ofInstant(Instant.now(), zoneId)
-    val year = now.year.toShort()
-    val yearBytes = ByteBuffer.allocate(2).putShort(year).array()
-    return byteArrayOf(
-        yearBytes[0], yearBytes[1],
-        now.monthValue.toByte(),
-        now.dayOfMonth.toByte(),
-        now.hour.toByte(),
-        now.minute.toByte(),
-        now.second.toByte()
-    )
-}
