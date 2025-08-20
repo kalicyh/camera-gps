@@ -131,58 +131,73 @@ class LocationSenderService : Service() {
             val readCharacteristic = service?.getCharacteristic(CHARACTERISTIC_READ_UUID)
 
             //enable GPS if needed
-            service?.getCharacteristic(CHARACTERISTIC_ENABLE_GPS_COMMAND)
-                ?.let { enableGpsCharacteristic ->
-                    Timber.i("Enabling GPS characteristic: ${enableGpsCharacteristic.uuid}")
+            val gpsEnableCharacteristic = service?.getCharacteristic(CHARACTERISTIC_ENABLE_GPS_COMMAND)
+            if(gpsEnableCharacteristic != null) {
+
+                    Timber.i("Enabling GPS characteristic: ${gpsEnableCharacteristic.uuid}")
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         gatt.writeCharacteristic(
-                            enableGpsCharacteristic,
+                            gpsEnableCharacteristic,
                             byteArrayOf(0x01),
                             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
                         )
                     } else {
-                        enableGpsCharacteristic.value = byteArrayOf(0x01)
-                        gatt.writeCharacteristic(enableGpsCharacteristic)
+                        gpsEnableCharacteristic.value = byteArrayOf(0x01)
+                        gatt.writeCharacteristic(gpsEnableCharacteristic)
+                    }
+            } else {
+                // characteristic to enable gps does not exist, starting transmission
+                fusedLocationClient.lastLocation.addOnSuccessListener {
+                    if (it != null) {
+                        locationResultVar = it
+                        sendData(gatt, characteristic)
                     }
                 }
+                fusedLocationClient.requestLocationUpdates(
+                    LocationRequest.Builder(
+                        Priority.PRIORITY_HIGH_ACCURACY,
+                        5000,
+                    ).build(), locationCallback, Looper.getMainLooper()
+                )
+            }
+
 
             gatt.readCharacteristic(readCharacteristic)
-            fusedLocationClient.lastLocation.addOnSuccessListener {
-                if (it != null) {
-                    locationResultVar = it
-                    sendData(gatt, characteristic)
-                }
-            }
-            fusedLocationClient.requestLocationUpdates(
-                LocationRequest.Builder(
-                    Priority.PRIORITY_HIGH_ACCURACY,
-                    5000,
-                ).build(), locationCallback, Looper.getMainLooper()
-            )
-
 
         }
 
         @SuppressLint("MissingPermission")
         override fun onCharacteristicWrite(
-            gatt: BluetoothGatt?,
-            characteristic: BluetoothGattCharacteristic?,
+            gatt: BluetoothGatt,
+            writtenCharacteristic: BluetoothGattCharacteristic?,
             status: Int,
         ) {
-            super.onCharacteristicWrite(gatt, characteristic, status)
-            if (characteristic?.uuid == CHARACTERISTIC_ENABLE_GPS_COMMAND) {
+            super.onCharacteristicWrite(gatt, writtenCharacteristic, status)
+            if (writtenCharacteristic?.uuid == CHARACTERISTIC_ENABLE_GPS_COMMAND) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    gatt?.writeCharacteristic(
-                        characteristic,
+                    gatt.writeCharacteristic(
+                        writtenCharacteristic,
                         byteArrayOf(0x01),
                         BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
                     )
                 } else {
-                    characteristic.value = byteArrayOf(0x01)
-                    gatt?.writeCharacteristic(characteristic)
+                    writtenCharacteristic.value = byteArrayOf(0x01)
+                    gatt.writeCharacteristic(writtenCharacteristic)
                 }
-            } else if (characteristic?.uuid == CHARACTERISTIC_ENABLED_GPS_COMMAND) {
+            } else if (writtenCharacteristic?.uuid == CHARACTERISTIC_ENABLED_GPS_COMMAND) {
                 Timber.i("GPS flag enabled on device, will now send data")
+                fusedLocationClient.lastLocation.addOnSuccessListener {
+                    if (it != null) {
+                        locationResultVar = it
+                        sendData(gatt, characteristic)
+                    }
+                }
+                fusedLocationClient.requestLocationUpdates(
+                    LocationRequest.Builder(
+                        Priority.PRIORITY_HIGH_ACCURACY,
+                        5000,
+                    ).build(), locationCallback, Looper.getMainLooper()
+                )
             }
             Timber.i("onCharacteristic write status: $status")
         }
