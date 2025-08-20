@@ -78,15 +78,13 @@ fun BatteryOptimizationDialog(
                 TextButton(
                     onClick = {
                         try {
-                            val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
                                 // Direct intent to request ignoring battery optimizations for this app
-                                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                /* Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                                     data = Uri.parse("package:${context.packageName}")
-                                }
-                            } else {
-                                // Fallback to general battery optimization settings for older versions
-                                Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                            }
+                                } */
+                               
+                           
                             context.startActivity(intent)
                             Timber.i("Opened battery optimization settings for package: ${context.packageName}")
                         } catch (e: Exception) {
