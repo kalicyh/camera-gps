@@ -21,6 +21,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.companion.AssociationInfo
 import android.companion.AssociationRequest
@@ -694,7 +695,7 @@ private suspend fun requestDeviceAssociation(
     // Match only Bluetooth devices whose service UUID matches this pattern.
     // For this demo we will match our GATTServerSample
     val deviceFilter = BluetoothLeDeviceFilter.Builder()
-        .setNamePattern(Pattern.compile("ILCE"))
+        .setScanFilter(ScanFilter.Builder().setManufacturerData())
         .build()
 
     val pairingRequest: AssociationRequest = AssociationRequest.Builder()

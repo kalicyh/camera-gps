@@ -64,10 +64,10 @@ class LocationSenderService : Service() {
         val CHARACTERISTIC_UUID: UUID = UUID.fromString("0000dd11-0000-1000-8000-00805f9b34fb")
         val CHARACTERISTIC_READ_UUID: UUID = UUID.fromString("0000dd21-0000-1000-8000-00805f9b34fb")
 
-        val CHARACTERISTIC_ENABLE_GPS_COMMAND: UUID = UUID.fromString("0000dd30-0000-1000-8000-00805f9b34fb")
-        val CHARACTERISTIC_ENABLED_GPS_COMMAND: UUID = UUID.fromString("0000dd31-0000-1000-8000-00805f9b34fb")
-
-
+        val CHARACTERISTIC_ENABLE_GPS_COMMAND: UUID =
+            UUID.fromString("0000dd30-0000-1000-8000-00805f9b34fb")
+        val CHARACTERISTIC_ENABLED_GPS_COMMAND: UUID =
+            UUID.fromString("0000dd31-0000-1000-8000-00805f9b34fb")
 
 
         // Actions for controlling the service
@@ -135,7 +135,11 @@ class LocationSenderService : Service() {
                 ?.let { enableGpsCharacteristic ->
                     Timber.i("Enabling GPS characteristic: ${enableGpsCharacteristic.uuid}")
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        gatt.writeCharacteristic(enableGpsCharacteristic, byteArrayOf(0x01), BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+                        gatt.writeCharacteristic(
+                            enableGpsCharacteristic,
+                            byteArrayOf(0x01),
+                            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                        )
                     } else {
                         enableGpsCharacteristic.value = byteArrayOf(0x01)
                         gatt.writeCharacteristic(enableGpsCharacteristic)
@@ -144,7 +148,7 @@ class LocationSenderService : Service() {
 
             gatt.readCharacteristic(readCharacteristic)
             fusedLocationClient.lastLocation.addOnSuccessListener {
-                if(it != null) {
+                if (it != null) {
                     locationResultVar = it
                     sendData(gatt, characteristic)
                 }
@@ -153,7 +157,7 @@ class LocationSenderService : Service() {
                 LocationRequest.Builder(
                     Priority.PRIORITY_HIGH_ACCURACY,
                     5000,
-                    ).build(), locationCallback, Looper.getMainLooper()
+                ).build(), locationCallback, Looper.getMainLooper()
             )
 
 
@@ -166,9 +170,13 @@ class LocationSenderService : Service() {
             status: Int,
         ) {
             super.onCharacteristicWrite(gatt, characteristic, status)
-            if(characteristic?.uuid == CHARACTERISTIC_ENABLE_GPS_COMMAND) {
+            if (characteristic?.uuid == CHARACTERISTIC_ENABLE_GPS_COMMAND) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    gatt?.writeCharacteristic(characteristic, byteArrayOf(0x01), BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+                    gatt?.writeCharacteristic(
+                        characteristic,
+                        byteArrayOf(0x01),
+                        BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                    )
                 } else {
                     characteristic.value = byteArrayOf(0x01)
                     gatt?.writeCharacteristic(characteristic)
@@ -213,7 +221,7 @@ class LocationSenderService : Service() {
         // Check if this is a shutdown request
         if (intent?.action == ACTION_REQUEST_SHUTDOWN) {
             requestShutdown()
-            return START_NOT_STICKY
+            return START_REDELIVER_INTENT
         }
 
         // Cancel any pending shutdown since we're starting normally
@@ -246,7 +254,9 @@ class LocationSenderService : Service() {
         // Clean up shutdown timer
         cancelShutdown()
 
-        //fusedLocationClient.removeLocationUpdates(locationCallback)
+        if (locationCallback != null) {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+        }
         gatt1?.disconnect()
         gatt1?.close()
         Timber.i("Destroyed service")
@@ -263,6 +273,7 @@ class LocationSenderService : Service() {
             val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
             Thread.setDefaultUncaughtExceptionHandler(GlobalExceptionHandler(defaultHandler))
         }
+
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         locationCallback = object : LocationCallback() {
@@ -322,7 +333,17 @@ class LocationSenderService : Service() {
 
         val paddingBytes = ByteArray(65)
         val fixedBytes = byteArrayOf(
-            0x00, if (shouldSendTimeZoneAndDst) 0x5D else 0x59, 0x08, 0x02, 0xFC.toByte(), if (shouldSendTimeZoneAndDst) 0x03 else 0x00, 0x00, 0x00, 0x10, 0x10, 0x10
+            0x00,
+            if (shouldSendTimeZoneAndDst) 0x5D else 0x59,
+            0x08,
+            0x02,
+            0xFC.toByte(),
+            if (shouldSendTimeZoneAndDst) 0x03 else 0x00,
+            0x00,
+            0x00,
+            0x10,
+            0x10,
+            0x10
         )
 
         // taken from https://github.com/mlapaglia/AlphaSync/blob/main/app/src/main/java/com.alphasync/sonycommand/SonyCommandGenerator.kt
@@ -393,6 +414,7 @@ class LocationSenderService : Service() {
 
         shutdownRunnable = Runnable {
             Timber.i("Shutdown timer expired, terminating service")
+            stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
 
@@ -413,7 +435,7 @@ class LocationSenderService : Service() {
 }
 
 private fun getConvertedDstOffset(timezoneId: ZoneId): ByteArray {
-    if(!timezoneId.rules.isDaylightSavings(Instant.now())) {
+    if (!timezoneId.rules.isDaylightSavings(Instant.now())) {
         return byteArrayOf(0, 0) // No DST offset
     }
     val offsetDstMin = timezoneId.rules.getDaylightSavings(Instant.now()).toMinutes().toInt()
