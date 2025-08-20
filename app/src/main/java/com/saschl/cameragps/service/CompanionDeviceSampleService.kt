@@ -131,6 +131,9 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
         super.onDestroy()
         Timber.i("CompanionDeviceService destroyed. Will request graceful shutdown now")
 
+        // For some reason Android 12 immediately kills the service without onDeviceDisappeared.
+        // FOr now it seems to work as it finds the device again after some time so it's more or less ok
+        // Still very weird and should be handled better
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
             // Request graceful shutdown instead of immediate termination
             val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {

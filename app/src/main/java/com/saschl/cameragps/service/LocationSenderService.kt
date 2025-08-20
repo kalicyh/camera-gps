@@ -173,16 +173,24 @@ class LocationSenderService : Service() {
             status: Int,
         ) {
             super.onCharacteristicWrite(gatt, writtenCharacteristic, status)
+
+            // The gps command has been unlocked, now lock it for us
             if (writtenCharacteristic?.uuid == CHARACTERISTIC_ENABLE_GPS_COMMAND) {
+                val lockCharacteristic = gatt.services.flatMap { s -> s.characteristics }.find { it.uuid == CHARACTERISTIC_ENABLED_GPS_COMMAND }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    gatt.writeCharacteristic(
-                        writtenCharacteristic,
-                        byteArrayOf(0x01),
-                        BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                    )
+
+                    lockCharacteristic?.let {
+                        Timber.i("Found characteristic to lock GPS: ${it.uuid}")
+                        gatt.writeCharacteristic(
+                            it,
+                            byteArrayOf(0x01),
+                            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                        )
+                    }
+
                 } else {
-                    writtenCharacteristic.value = byteArrayOf(0x01)
-                    gatt.writeCharacteristic(writtenCharacteristic)
+                    lockCharacteristic?.value = byteArrayOf(0x01)
+                    gatt.writeCharacteristic(lockCharacteristic)
                 }
             } else if (writtenCharacteristic?.uuid == CHARACTERISTIC_ENABLED_GPS_COMMAND) {
                 Timber.i("GPS flag enabled on device, will now send data")
