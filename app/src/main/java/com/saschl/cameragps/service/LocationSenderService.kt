@@ -272,7 +272,7 @@ class LocationSenderService : Service() {
 
 
         // transmit timezone offset? NO
-        data[5] = 0x00.toByte()
+        data[5] = 0x03.toByte()
 
         val fixedData2 = "0000101010".chunked(2)
             .map { it.toInt(16).toByte() }
