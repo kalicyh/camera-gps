@@ -674,14 +674,15 @@ private fun Intent.getAssociationResult(): AssociatedDeviceCompat? {
         // Classic BluetoothDevice or a Wifi ScanResult
         // In our case we are looking for our BLE GATT server so we can cast directly
         // to the BLE ScanResult
+        // FIXME for some reason it does return a BluetoothDevice so we need to handle that
         @Suppress("DEPRECATION")
-        val scanResult = getParcelableExtra<ScanResult>(CompanionDeviceManager.EXTRA_DEVICE)
+        val scanResult = getParcelableExtra<BluetoothDevice>(CompanionDeviceManager.EXTRA_DEVICE)
         if (scanResult != null) {
             result = AssociatedDeviceCompat(
-                id = scanResult.advertisingSid,
-                address = scanResult.device.address ?: "N/A",
-                name = scanResult.scanRecord?.deviceName ?: "N/A",
-                device = scanResult.device,
+                id = -1, //no id
+                address = scanResult.address ?: "N/A",
+                name = scanResult.name ?: "N/A",
+                device = scanResult,
             )
         }
     }
@@ -694,9 +695,9 @@ private suspend fun requestDeviceAssociation(
 ): IntentSender {
     // Match only Bluetooth devices whose service UUID matches this pattern.
     // For this demo we will match our GATTServerSample
-    val deviceFilter = BluetoothLeDeviceFilter.Builder()
+ /*   val deviceFilter = BluetoothLeDeviceFilter.Builder()
         .setScanFilter(ScanFilter.Builder().setManufacturerData())
-        .build()
+        .build()*/
 
     val pairingRequest: AssociationRequest = AssociationRequest.Builder()
         // Find only devices that match this request filter.

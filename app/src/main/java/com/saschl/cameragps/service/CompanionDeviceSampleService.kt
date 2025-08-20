@@ -39,10 +39,10 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
     @SuppressLint("MissingPermission")
     @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
     override fun onDeviceAppeared(address: String) {
-        super.onDeviceAppeared(address)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU || missingPermissions()) {
             return
         }
+        Timber.i("Device appeared oldes API: $address")
 
         startLocationSenderService(address)
     }
