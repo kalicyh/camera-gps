@@ -31,9 +31,12 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.UUID
+import kotlin.experimental.and
+import kotlin.experimental.or
 
 class LocationSenderService : Service() {
 
+    private var shouldSendTimeZoneAndDst: Boolean = true
     private var startId: Int = 0
     private val binder = LocalBinder()
 
@@ -59,6 +62,8 @@ class LocationSenderService : Service() {
 
         // Same as the service but for the characteristic
         val CHARACTERISTIC_UUID: UUID = UUID.fromString("0000dd11-0000-1000-8000-00805f9b34fb")
+        val CHARACTERISTIC_READ_UUID: UUID = UUID.fromString("0000dd21-0000-1000-8000-00805f9b34fb")
+
 
         // Actions for controlling the service
         const val ACTION_REQUEST_SHUTDOWN = "com.saschl.cameragps.ACTION_REQUEST_SHUTDOWN"
@@ -117,6 +122,10 @@ class LocationSenderService : Service() {
 
             // If the GATTServerSample service is found, get the characteristic
             characteristic = service?.getCharacteristic(CHARACTERISTIC_UUID)
+
+            val readCharacteristic = service?.getCharacteristic(CHARACTERISTIC_READ_UUID);
+
+            gatt.readCharacteristic(readCharacteristic)
             fusedLocationClient.lastLocation.addOnSuccessListener {
                 if(it != null) {
                     locationResultVar = it
@@ -127,7 +136,6 @@ class LocationSenderService : Service() {
                 LocationRequest.Builder(
                     Priority.PRIORITY_HIGH_ACCURACY,
                     5000,
-
                     ).build(), locationCallback, Looper.getMainLooper()
             )
 
@@ -141,8 +149,6 @@ class LocationSenderService : Service() {
         ) {
             super.onCharacteristicWrite(gatt, characteristic, status)
             Timber.i("onCharacteristic write status: $status")
-            //     state = state.copy(messageSent = status == BluetoothGatt.GATT_SUCCESS)
-            //     currentOnStateChange(state)
         }
 
         @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
@@ -152,9 +158,9 @@ class LocationSenderService : Service() {
             status: Int,
         ) {
             super.onCharacteristicRead(gatt, characteristic, status)
-            //   if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            doOnRead(characteristic.value)
-            //    }
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                doOnRead(characteristic.value)
+            }
         }
 
         override fun onCharacteristicRead(
@@ -168,7 +174,8 @@ class LocationSenderService : Service() {
         }
 
         private fun doOnRead(value: ByteArray) {
-        
+            shouldSendTimeZoneAndDst = (value.size >= 5 && value[4].and(2.toByte()) == 2.toByte())
+            Timber.i("Characteristic read, shouldSendTimeZoneAndDst: $shouldSendTimeZoneAndDst")
         }
     }
 
@@ -189,7 +196,7 @@ class LocationSenderService : Service() {
         this.startId = startId;
 
         val address = intent?.getStringExtra("address")
-        startedManually = intent?.getBooleanExtra("startedManually", false)?: false
+        startedManually = intent?.getBooleanExtra("startedManually", false) ?: false
         var device: BluetoothDevice? = null
 
         device = bluetoothManager.adapter.getRemoteDevice(address)
@@ -253,9 +260,9 @@ class LocationSenderService : Service() {
                             locationResultVar = lastLocation
                         }
                     } else {
-                      /*  Timber.w(
-                            "New location is more accurate than the old one, updating"
-                        )*/
+                        /*  Timber.w(
+                              "New location is more accurate than the old one, updating"
+                          )*/
                         locationResultVar = lastLocation
                     }
 
@@ -296,7 +303,13 @@ class LocationSenderService : Service() {
         val timeZoneOffsetBytes = getConvertedTimeZoneOffset(timeZoneId)
         val dstOffsetBytes = getConvertedDstOffset(timeZoneId)
 
-        val data = ByteArray(95)
+        var data: ByteArray;
+
+        if (shouldSendTimeZoneAndDst) {
+            data = ByteArray(95)
+        } else {
+            data = ByteArray(91)
+        }
         var currentBytePosition = 0
 
         System.arraycopy(fixedBytes, 0, data, currentBytePosition, fixedBytes.size)
@@ -306,11 +319,18 @@ class LocationSenderService : Service() {
         System.arraycopy(dateBytes, 0, data, currentBytePosition, dateBytes.size)
         currentBytePosition += dateBytes.size
         System.arraycopy(paddingBytes, 0, data, currentBytePosition, paddingBytes.size)
-        currentBytePosition += paddingBytes.size
-        System.arraycopy(timeZoneOffsetBytes, 0, data, currentBytePosition, timeZoneOffsetBytes.size)
-        currentBytePosition += timeZoneOffsetBytes.size
-        System.arraycopy(dstOffsetBytes, 0, data, currentBytePosition, dstOffsetBytes.size)
-
+        if (shouldSendTimeZoneAndDst) {
+            currentBytePosition += paddingBytes.size
+            System.arraycopy(
+                timeZoneOffsetBytes,
+                0,
+                data,
+                currentBytePosition,
+                timeZoneOffsetBytes.size
+            )
+            currentBytePosition += timeZoneOffsetBytes.size
+            System.arraycopy(dstOffsetBytes, 0, data, currentBytePosition, dstOffsetBytes.size)
+        }
         //val hex = data.toHex()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -395,9 +415,13 @@ private fun getConvertedDate(): ByteArray {
     val yearBytes = currentDateTime.year.toShort().toByteArray()
 
     return byteArrayOf(
-        yearBytes[0], yearBytes[1],
-        currentDateTime.monthValue.toByte(), currentDateTime.dayOfMonth.toByte(),
-        currentDateTime.hour.toByte(), currentDateTime.minute.toByte(), currentDateTime.second.toByte()
+        yearBytes[0],
+        yearBytes[1],
+        currentDateTime.monthValue.toByte(),
+        currentDateTime.dayOfMonth.toByte(),
+        currentDateTime.hour.toByte(),
+        currentDateTime.minute.toByte(),
+        currentDateTime.second.toByte()
     )
 }
 
