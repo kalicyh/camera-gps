@@ -3,6 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-feature android:name="android.software.companion_device_setup" />
+    <uses-feature android:name="android.hardware.bluetooth" android:required="true"/>
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
+
     <!--  Request the general foreground service permission  -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <!--  Request the specific foreground service permission for each declared type  -->
@@ -18,15 +21,19 @@
 
     <!-- Bluetooth permissions -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-   <!-- <uses-permission android:name="android.permission.BLUETOOTH_SCAN"/>-->
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
 <!--    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />-->
 
     <!-- Companion device permissions -->
     <uses-permission android:name="android.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE" />
     <uses-permission android:name="android.permission.REQUEST_COMPANION_START_FOREGROUND_SERVICES_FROM_BACKGROUND"/>
-<!--
+<!--    <uses-permission android:name="android.permission.REQUEST_COMPANION_RUN_IN_BACKGROUND"/>
     <uses-permission android:name="android.permission.REQUEST_COMPANION_USE_DATA_IN_BACKGROUND"/>
--->
+
+    -->
+    <!--
+        <uses-permission android:name="android.permission.REQUEST_COMPANION_USE_DATA_IN_BACKGROUND"/>
+    -->
 
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <application
@@ -39,7 +46,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.App.Starting">
         <activity
-            android:name=".MainActivity"
+            android:name="com.saschl.cameragps.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.App.Starting">
@@ -50,15 +57,8 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".ui.LogViewerActivity"
-            android:exported="false"
-            android:label="Log Viewer"
-            android:theme="@style/Theme.CameraGps"
-        />
-
         <service
-            android:name=".service.CompanionDeviceSampleService"
+            android:name="com.saschl.cameragps.service.CompanionDeviceSampleService"
             android:exported="true"
             android:permission="android.permission.BIND_COMPANION_DEVICE_SERVICE">
             <intent-filter>
@@ -66,8 +66,14 @@
             </intent-filter>
         </service>
 
+        <activity
+            android:name="com.saschl.cameragps.ui.LogViewerActivity"
+            android:exported="false"
+            android:label="Log Viewer"
+            android:theme="@style/Theme.CameraGps"
+        />
         <service
-            android:name=".service.LocationSenderService"
+            android:name="com.saschl.cameragps.service.LocationSenderService"
             android:foregroundServiceType="location|connectedDevice">
         </service>
 

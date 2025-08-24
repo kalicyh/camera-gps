@@ -43,6 +43,7 @@ import com.saschl.cameragps.R
 import com.saschl.cameragps.service.pairing.startDevicePresenceObservation
 import com.saschl.cameragps.utils.PreferencesManager
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,6 +61,12 @@ fun DeviceDetailScreen(
     var isDeviceEnabled by remember {
         mutableStateOf(PreferencesManager.isDeviceEnabled(context, device.address))
     }
+
+    // Track device enabled state
+    var keepAlive by remember {
+        mutableStateOf(PreferencesManager.isKeepAliveEnabled(context, device.address))
+    }
+
 
     Scaffold(
         topBar = {
@@ -92,22 +99,51 @@ fun DeviceDetailScreen(
         BackHandler {
             onClose()
         }
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState()),
-
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Device info section
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
+                Column(
+                    modifier = Modifier.weight(0.6f)
+                ) {
+                    Text(text = "Name: ${device.name} (${device.address})")
+                }
+
+                Column(
+                    modifier = Modifier.weight(0.4f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { scope.launch { onDisassociate(device) } },
+                        border = ButtonDefaults.outlinedButtonBorder().copy(
+                            brush = SolidColor(MaterialTheme.colorScheme.error),
+                        ),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.remove),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+
+            // Settings section - full width
             Column(
                 modifier = Modifier
-                    .weight(0.6f)
-                    .padding(16.dp),
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-
-                Text(text = "Name: ${device.name} (${device.address})")
-
                 // Device toggle switch
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -120,11 +156,13 @@ fun DeviceDetailScreen(
                     )
                     Switch(
                         checked = isDeviceEnabled,
+                        enabled = !keepAlive,
                         onCheckedChange = { enabled ->
                             isDeviceEnabled = enabled
                             PreferencesManager.setDeviceEnabled(context, device.address, enabled)
                             if(!enabled) {
                                 deviceManger.stopObservingDevicePresence(device.address)
+                                Timber.i("Stopping LocationSenderService from detail for device ${device.address}")
                                 context.stopService(Intent(context.applicationContext, LocationSenderService::class.java))
                             } else {
                                 startDevicePresenceObservation(deviceManger, device)
@@ -132,27 +170,45 @@ fun DeviceDetailScreen(
                         }
                     )
                 }
-            }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(0.4f)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedButton(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = { scope.launch { onDisassociate(device) } },
-                    border = ButtonDefaults.outlinedButtonBorder().copy(
-                        brush = SolidColor(MaterialTheme.colorScheme.error),
-                    ),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(R.string.remove),
-                        color = MaterialTheme.colorScheme.error
+                        text = stringResource(R.string.enableConstantly),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Switch(
+                        checked = keepAlive,
+                        enabled = isDeviceEnabled,
+                        onCheckedChange = { enabled ->
+                            keepAlive = enabled
+                            PreferencesManager.setKeepAliveEnabled(context, device.address, enabled)
+                            val intent = Intent(context, LocationSenderService::class.java)
+                            intent.putExtra("address", device.address.uppercase())
+                            if(enabled) {
+                                deviceManger.stopObservingDevicePresence(device.address)
+
+                                context.startForegroundService(intent)
+                            } else {
+                                Timber.i("Stopping LocationSenderService from detail for device ${device.address}")
+                                context.stopService(intent)
+                                startDevicePresenceObservation(deviceManger, device)
+                            }
+                        }
                     )
                 }
+
+                // Description for keepAlive setting - smaller and more connected
+                Text(
+                    text = "Alternative approach for devices with aggressive battery optimizations (e.g., Xiaomi).\n\nKeeps the service running constantly instead of relying on device presence detection.",
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = MaterialTheme.typography.labelSmall.fontSize),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 8.dp, top = 4.dp, bottom = 8.dp),
+                    lineHeight = MaterialTheme.typography.labelSmall.lineHeight
+                )
             }
         }
     }

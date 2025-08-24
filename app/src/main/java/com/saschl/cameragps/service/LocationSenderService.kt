@@ -13,8 +13,10 @@ import android.location.Location
 import android.os.Binder
 import android.os.Build
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.IBinder
 import android.os.Looper
+import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.getSystemService
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -31,6 +33,10 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.UUID
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 import kotlin.experimental.and
 import kotlin.experimental.or
 
@@ -50,10 +56,12 @@ class LocationSenderService : Service() {
 
     private var startedManually: Boolean = false
 
-    // Shutdown timer functionality
-    private val shutdownHandler = Handler(Looper.getMainLooper())
-    private var shutdownRunnable: Runnable? = null
+    private var shutdownExecutor: ScheduledExecutorService? = null
+    private var shutdownFuture: ScheduledFuture<*>? = null
+
     private var isShutdownRequested = false
+
+    private val handlerThread = HandlerThread("LocationSenderServiceThread")
 
     companion object {
 
@@ -113,6 +121,8 @@ class LocationSenderService : Service() {
                 }
             } else {
                 Timber.i("Connected to device %d", status)
+                cancelShutdown()
+                //  gatt.requestMtu(158)
                 gatt.discoverServices()
             }
         }
@@ -146,6 +156,9 @@ class LocationSenderService : Service() {
                         gatt.writeCharacteristic(gpsEnableCharacteristic)
                     }
             } else {
+                if(!handlerThread.isAlive) {
+                    handlerThread.start()
+                }
                 // characteristic to enable gps does not exist, starting transmission
                 fusedLocationClient.lastLocation.addOnSuccessListener {
                     if (it != null) {
@@ -157,7 +170,7 @@ class LocationSenderService : Service() {
                     LocationRequest.Builder(
                         Priority.PRIORITY_HIGH_ACCURACY,
                         5000,
-                    ).build(), locationCallback, Looper.getMainLooper()
+                    ).build(), locationCallback, handlerThread.looper
                 )
             }
 
@@ -282,6 +295,7 @@ class LocationSenderService : Service() {
         }
         gatt1?.disconnect()
         gatt1?.close()
+        gatt1 = null
         Timber.i("Destroyed service")
     }
 
@@ -343,7 +357,8 @@ class LocationSenderService : Service() {
             this,
             1,
             NotificationsHelper.buildNotification(this),
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION.or(ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION or ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+
         )
     }
 
@@ -435,13 +450,26 @@ class LocationSenderService : Service() {
         isShutdownRequested = true
         Timber.i("Shutdown requested, will terminate in ${SHUTDOWN_DELAY_MS / 1000} seconds")
 
-        shutdownRunnable = Runnable {
-            Timber.i("Shutdown timer expired, terminating service")
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
+        // Create single-threaded executor if needed
+/*        if (shutdownExecutor == null) {
+            shutdownExecutor = Executors.newSingleThreadScheduledExecutor { r ->
+                Thread(r, "shutdown-timer").apply {
+                    isDaemon = true
+                }
+            }
         }
 
-        shutdownHandler.postDelayed(shutdownRunnable!!, SHUTDOWN_DELAY_MS)
+        shutdownFuture = shutdownExecutor?.schedule({
+            if (isShutdownRequested) {
+                Timber.i("Shutdown timer expired, terminating service")
+                // Switch back to main thread for UI operations
+                Handler(Looper.getMainLooper()).post {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                }
+            }
+        }, SHUTDOWN_DELAY_MS, TimeUnit.MILLISECONDS)*/
+        stopSelf()
     }
 
     /**
@@ -450,8 +478,8 @@ class LocationSenderService : Service() {
     private fun cancelShutdown() {
         if (isShutdownRequested) {
             Timber.i("Cancelling pending shutdown")
-            shutdownRunnable?.let { shutdownHandler.removeCallbacks(it) }
-            shutdownRunnable = null
+           /* shutdownFuture?.cancel(false)
+            shutdownFuture = null*/
             isShutdownRequested = false
         }
     }

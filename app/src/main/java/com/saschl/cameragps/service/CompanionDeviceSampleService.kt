@@ -2,27 +2,19 @@ package com.saschl.cameragps.service
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.NotificationManager
 import android.companion.AssociationInfo
 import android.companion.CompanionDeviceManager
 import android.companion.CompanionDeviceService
 import android.companion.DevicePresenceEvent
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.annotation.RequiresPermission
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationChannelCompat
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.getSystemService
-import com.saschl.cameragps.R
 import com.saschl.cameragps.utils.PreferencesManager
 import timber.log.Timber
 import java.util.Locale
-import java.util.UUID
 
 
 class CompanionDeviceSampleService : CompanionDeviceService() {
@@ -90,7 +82,8 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
             val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
                 action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
             }
-            startService(shutdownIntent)
+            //startService(shutdownIntent)
+             stopService(Intent(this, LocationSenderService::class.java))
         }
     }
 
@@ -139,7 +132,11 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
             val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
                 action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
             }
-            startService(shutdownIntent)
+
+            stopService(shutdownIntent)
+           // startService(shutdownIntent)
+
+        //Thread.sleep(6000) // Wait for the service to start and handle the shutdown request
         }
 
     }

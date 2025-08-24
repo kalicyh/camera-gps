@@ -512,9 +512,6 @@ private fun AssociatedDevicesList(
                     false
                 }
 
-                if(device.name == "N/A") {
-                    device.name = adapter?.getRemoteDevice(device.address)!!.name
-                }
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -546,7 +543,7 @@ private fun AssociatedDevicesList(
                             .fillMaxWidth()
                             .weight(1f),
                     ) {
-                        Text(fontWeight = FontWeight.Bold, text = device.name)
+                        Text(fontWeight = FontWeight.Bold, text = if (device.name == "N/A") adapter?.getRemoteDevice(device.address)!!.name else device.name)
 
                         /*if (!isPaired) {
                             Text(

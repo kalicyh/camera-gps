@@ -9,6 +9,8 @@ object PreferencesManager {
     private const val KEY_FIRST_LAUNCH = "is_first_launch"
     private const val KEY_APP_ENABLED = "app_enabled"
     private const val KEY_DEVICE_ENABLED_PREFIX = "device_enabled_"
+
+    private const val KEY_DEVICE_KEEPALIVE_PREFIX = "device_keepalive_"
     private const val KEY_BATTERY_OPTIMIZATION_DIALOG_DISMISSED = "battery_optimization_dialog_dismissed"
 
     private fun getPreferences(context: Context): SharedPreferences {
@@ -52,6 +54,16 @@ object PreferencesManager {
     fun setBatteryOptimizationDialogDismissed(context: Context, dismissed: Boolean) {
         getPreferences(context).edit {
             putBoolean(KEY_BATTERY_OPTIMIZATION_DIALOG_DISMISSED, dismissed)
+        }
+    }
+
+    fun isKeepAliveEnabled(context: Context, deviceAddress: String): Boolean {
+        return getPreferences(context).getBoolean(KEY_DEVICE_KEEPALIVE_PREFIX + deviceAddress, false)
+    }
+
+    fun setKeepAliveEnabled(context: Context, deviceAddress: String, enabled: Boolean) {
+        getPreferences(context).edit {
+            putBoolean(KEY_DEVICE_KEEPALIVE_PREFIX + deviceAddress, enabled)
         }
     }
 }
