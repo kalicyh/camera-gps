@@ -2,10 +2,12 @@ package com.saschl.cameragps.service
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.ActivityManager
 import android.companion.AssociationInfo
 import android.companion.CompanionDeviceManager
 import android.companion.CompanionDeviceService
 import android.companion.DevicePresenceEvent
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -23,7 +25,8 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
         if (PreferencesManager.isAppEnabled(this)) {
             val serviceIntent = Intent(this, LocationSenderService::class.java)
             serviceIntent.putExtra("address", address?.uppercase(Locale.getDefault()))
-            Timber.i("Starting LocationSenderService for address: $address")
+            Timber.i("Starting LocationSenderService for address: $address in 5 seconds")
+
             startForegroundService(serviceIntent)
         }
     }
@@ -72,25 +75,27 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
             val associationInfo = associatedDevices?.find { it.id == associationId }
             val address = associationInfo?.deviceMacAddress?.toString()
 
-            startLocationSenderService(address)
+            if (!isLocationServiceRunning()) {
+                startLocationSenderService(address)
+            }
         }
 
         if (event.event == DevicePresenceEvent.EVENT_BLE_DISAPPEARED) {
             Timber.i("Device disappeared new API: ${event.associationId}")
 
             // Request graceful shutdown instead of immediate termination
-            val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
-                action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
-            }
+            /*   val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
+                   action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
+               }*/
             //startService(shutdownIntent)
-             stopService(Intent(this, LocationSenderService::class.java))
+            stopService(Intent(this, LocationSenderService::class.java))
         }
     }
 
     @Deprecated("Deprecated in Java")
     override fun onDeviceDisappeared(address: String) {
         super.onDeviceDisappeared(address)
-        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             Timber.i("Device disappeared oldest api: $address. Service will keep running until destroyed")
             return
         }
@@ -98,7 +103,7 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
 
     @Deprecated("Deprecated in Java")
     override fun onDeviceDisappeared(associationInfo: AssociationInfo) {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
             super.onDeviceDisappeared(associationInfo)
             Timber.i("Device disappeared old API: ${associationInfo.id}. Service will keep running until destroyed")
         }
@@ -118,6 +123,15 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
         Timber.i("CDM started")
     }
 
+    private fun isLocationServiceRunning(): Boolean {
+        val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        for (service in manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (LocationSenderService::class.java.name == service.service.className) {
+                return true
+            }
+        }
+        return false
+    }
 
     @SuppressLint("MissingPermission")
     override fun onDestroy() {
@@ -127,16 +141,15 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
         // For some reason Android 12 immediately kills the service without onDeviceDisappeared.
         // FOr now it seems to work as it finds the device again after some time so it's more or less ok
         // Still very weird and should be handled better
-        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
             // Request graceful shutdown instead of immediate termination
-            val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
-                action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
-            }
+            val shutdownIntent = Intent(this, LocationSenderService::class.java)
+
 
             stopService(shutdownIntent)
-           // startService(shutdownIntent)
+            // startService(shutdownIntent)
 
-        //Thread.sleep(6000) // Wait for the service to start and handle the shutdown request
+            //Thread.sleep(6000) // Wait for the service to start and handle the shutdown request
         }
 
     }

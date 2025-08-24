@@ -27,13 +27,10 @@
     <!-- Companion device permissions -->
     <uses-permission android:name="android.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE" />
     <uses-permission android:name="android.permission.REQUEST_COMPANION_START_FOREGROUND_SERVICES_FROM_BACKGROUND"/>
-<!--    <uses-permission android:name="android.permission.REQUEST_COMPANION_RUN_IN_BACKGROUND"/>
-    <uses-permission android:name="android.permission.REQUEST_COMPANION_USE_DATA_IN_BACKGROUND"/>
 
-    -->
-    <!--
-        <uses-permission android:name="android.permission.REQUEST_COMPANION_USE_DATA_IN_BACKGROUND"/>
-    -->
+<!--    <uses-permission android:name="miui.permission.USE_INTERNAL_GENERAL_API"
+        tools:ignore="ProtectedPermissions" />-->
+
 
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <application
@@ -70,6 +67,12 @@
             android:name="com.saschl.cameragps.ui.LogViewerActivity"
             android:exported="false"
             android:label="Log Viewer"
+            android:theme="@style/Theme.CameraGps"
+        />
+        <activity
+            android:name="com.saschl.cameragps.ui.HelpActivity"
+            android:exported="false"
+            android:label="@string/help_faq_title"
             android:theme="@style/Theme.CameraGps"
         />
         <service

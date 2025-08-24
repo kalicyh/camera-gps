@@ -22,7 +22,6 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanFilter
-import android.bluetooth.le.ScanResult
 import android.companion.AssociationInfo
 import android.companion.AssociationRequest
 import android.companion.BluetoothLeDeviceFilter
@@ -40,21 +39,22 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -92,7 +92,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.concurrent.Executor
-import java.util.regex.Pattern
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -116,7 +115,6 @@ fun CameraDeviceManager(
         // If we already associated the device no need to do it again.
         mutableStateOf(deviceManager!!.getAssociatedDevices())
     }
-
 
 
     LaunchedEffect(lifecycleState) {
@@ -239,12 +237,25 @@ private fun DevicesScreen(
                 title = {
                     Text(
                         text = stringResource(R.string.app_name_ui),
-                      //  style = MaterialTheme.typography.headlineSmall,
+                        //  style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold
                     )
                 },
 
                 actions = {
+                    IconButton(
+                        onClick = {
+                            context.startActivity(
+                                Intent(context, com.saschl.cameragps.ui.HelpActivity::class.java)
+                            )
+                        }
+                    ) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = stringResource(R.string.help_menu_item),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     IconButton(
                         onClick = {
                             context.startActivity(
@@ -282,14 +293,7 @@ private fun DevicesScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
 
             ) {
-/*            Button(onClick = {
-                context.startActivity(
-                    Intent(
-                        context,
-                        LogViewerActivity::class.java
-                    )
-                )
-            }) { Text(text = stringResource(R.string.view_logs)) }*/
+
             ScanForDevicesMenu(
                 deviceManager,
                 associatedDevices,
@@ -301,6 +305,38 @@ private fun DevicesScreen(
                 //  startForegroundService(context, serviceIntent)
 
             }
+
+            // Single device limitation hint
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = stringResource(R.string.single_device_limitation_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
             AssociatedDevicesList(
                 associatedDevices = associatedDevices,
                 deviceManager,
@@ -424,6 +460,7 @@ private fun ScanForDevicesMenu(
             )
             Button(
                 modifier = Modifier.weight(0.7f),
+                enabled = associatedDevices.isEmpty(),
                 onClick = {
                     scope.launch {
                         val intentSender =
@@ -519,9 +556,9 @@ private fun AssociatedDevicesList(
                         .clickable(
                             true,
                             onClick = {
-                               /* if (isPaired) onConnect(device) else onSetPendingPairingDevice(
-                                    device
-                                )*/
+                                /* if (isPaired) onConnect(device) else onSetPendingPairingDevice(
+                                     device
+                                 )*/
                                 onConnect(device)
                             }),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -543,7 +580,10 @@ private fun AssociatedDevicesList(
                             .fillMaxWidth()
                             .weight(1f),
                     ) {
-                        Text(fontWeight = FontWeight.Bold, text = if (device.name == "N/A") adapter?.getRemoteDevice(device.address)!!.name else device.name)
+                        Text(
+                            fontWeight = FontWeight.Bold,
+                            text = if (device.name == "N/A") adapter?.getRemoteDevice(device.address)!!.name else device.name
+                        )
 
                         /*if (!isPaired) {
                             Text(
@@ -690,28 +730,19 @@ private fun Intent.getAssociationResult(): AssociatedDeviceCompat? {
 private suspend fun requestDeviceAssociation(
     deviceManager: CompanionDeviceManager
 ): IntentSender {
-    // Match only Bluetooth devices whose service UUID matches this pattern.
-    // For this demo we will match our GATTServerSample
- /*   val deviceFilter = BluetoothLeDeviceFilter.Builder()
-        .setScanFilter(ScanFilter.Builder().setManufacturerData())
-        .build()*/
+
+    val deviceFilter = BluetoothLeDeviceFilter.Builder()
+        .setScanFilter(ScanFilter.Builder().setManufacturerData(0x012D, byteArrayOf()).build())
+        .build()
 
     val pairingRequest: AssociationRequest = AssociationRequest.Builder()
-        // Find only devices that match this request filter.
-        //.addDeviceFilter(deviceFilter)
-        // Stop scanning as soon as one device matching the filter is found.
-        //  .setSingleDevice(true)
+        .addDeviceFilter(deviceFilter)
         .build()
 
     val result = CompletableDeferred<IntentSender>()
 
     val callback = object : CompanionDeviceManager.Callback() {
         override fun onAssociationPending(intentSender: IntentSender) {
-            result.complete(intentSender)
-        }
-
-        @Suppress("OVERRIDE_DEPRECATION")
-        override fun onDeviceFound(intentSender: IntentSender) {
             result.complete(intentSender)
         }
 

@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -67,7 +68,6 @@ fun DeviceDetailScreen(
         mutableStateOf(PreferencesManager.isKeepAliveEnabled(context, device.address))
     }
 
-
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -86,6 +86,21 @@ fun DeviceDetailScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.back)
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            context.startActivity(
+                                Intent(context, com.saschl.cameragps.ui.HelpActivity::class.java)
+                            )
+                        }
+                    ) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = stringResource(R.string.help_menu_item),
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },

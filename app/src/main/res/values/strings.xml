@@ -49,45 +49,84 @@
     <string name="permissions_required_app_error">%s is required for the app to function</string>
     <string name="background_location_required_error">Background location access required for continuous GPS sync when app is not in foreground</string>
     <string name="remove">Remove</string>
-    <string name="enable_device">Enable Device</string>
-    <string name="enableConstantly">Keep Service Running</string>
+
+    <!-- Welcome screen strings -->
+    <string name="welcome_title">Welcome to Alpha GPS</string>
+    <string name="welcome_subtitle">Real-time GPS coordinates for your camera via Bluetooth</string>
+    <string name="welcome_feature_connect_title">Connect Your Camera</string>
+    <string name="welcome_feature_connect_description">Pair your Sony camera with your phone via Bluetooth for seamless GPS data transfer</string>
+    <string name="welcome_feature_gps_sync_title">Real-time GPS Sync</string>
+    <string name="welcome_feature_gps_sync_description">Automatically sync your phone\'s GPS coordinates to your camera for accurate geotagging</string>
+    <string name="welcome_feature_device_management_title">Device Management</string>
+    <string name="welcome_feature_device_management_description">Manage multiple camera devices and control GPS sync settings easily</string>
+    <string name="welcome_get_started_button">Get Started</string>
+    <string name="welcome_settings_note">You can access these settings later from the main menu</string>
+    <string name="welcome_app_icon_description">Camera GPS App Icon</string>
 
     <!-- Settings screen strings -->
     <string name="settings">Settings</string>
-    <string name="back">Back</string>
     <string name="app_controls">App Controls</string>
-    <string name="enable_app">Enable Location Transmission</string>
-    <string name="enable_app_description">Turn the app functionality on or off. Might need a restart of your camera</string>
+    <string name="enable_app">Enable App</string>
+    <string name="enable_app_description">Allow the app to run and sync GPS data with connected cameras</string>
 
-    <string name="not_paired_tap_to_pair_again">Not paired, tap device to pair again</string>
-    <string name="to_pair_with_your_camera_please">To pair with your camera \'%1$s\', please:</string>
-    <string name="_1_turn_on_your_camera">\n1. Turn on your camera</string>
-    <string name="_2_go_to_camera_settings_and_enable_bluetooth_pairing_mode">2. Go to camera settings and enable Bluetooth/Pairing mode</string>
-    <string name="_3_make_sure_the_camera_is_discoverable">3. Make sure the camera is discoverable</string>
-    <string name="once_your_camera_is_ready_tap_continue_to_start_pairing">\nOnce your camera is ready, tap \'Continue\' to start pairing.</string>
-    <string name="the_request_was_canceled">The request was canceled</string>
-    <string name="internal_error_happened">Internal error happened</string>
-    <string name="no_device_matching_the_given_filter_were_found">No device matching the given filter were found</string>
-    <string name="the_user_explicitly_declined_the_request">The user explicitly declined the request</string>
+    <!-- General strings -->
     <string name="unknown_error">Unknown error</string>
 
+    <!-- Help & FAQ strings -->
+    <string name="help_faq_title">Help &amp; FAQ</string>
+    <string name="help_close_description">Close</string>
+    <string name="help_about_title">About CameraGPS</string>
+    <string name="help_about_description">This app provides real-time GPS coordinates to your camera via Bluetooth, allowing for automatic geotagging of your photos without needing the camera\'s built-in GPS.</string>
+    <string name="help_need_more_title">Need more help?</string>
+    <string name="help_need_more_description">Check the app logs in the top menu for troubleshooting information, or review your device settings to ensure all permissions are granted.</string>
+
+    <!-- FAQ Questions -->
+    <string name="faq_connect_camera_question">How do I connect my camera to the app?</string>
+    <string name="faq_connect_camera_answer">1. Make sure your camera supports Bluetooth connectivity and GPS tagging\n2. Enable Bluetooth on your phone\n3. Tap \'Add Camera Device\' to start the pairing process\n4. Follow the on-screen instructions to pair your camera. Reboot your camera after the first pairing process.</string>
+
+    <string name="faq_camera_not_appearing_question">Why isn\'t my camera appearing in the list?</string>
+    <string name="faq_camera_not_appearing_answer">• Ensure your camera is in pairing/Bluetooth mode\n• Check that your camera supports the required Bluetooth profile\n• Make sure you\'re within range (typically 10 meters)\n• Try restarting Bluetooth on your phone</string>
+
+    <string name="faq_enable_service_question">How do I enable the service permanently?</string>
+    <string name="faq_enable_service_answer">To keep GPS data syncing with your camera:\n1. Go to your device\'s Settings > Apps\n2. Find \'CameraGPS\' in the app list\n3. Tap on it and select \'Battery\'\n4. Choose \'Don\'t optimize\' or \'Allow background activity\'\n5. This prevents the system from stopping the GPS service\n\nYou can also access this through the device details page in the app.</string>
+
+    <string name="faq_camera_not_connecting_question">My camera does not connect automatically, what can I do?</string>
+    <string name="faq_camera_not_connecting_answer">Unfortunately, there might be situations, where the automatic connection does not work. If you encounter issues please do the following:  On the main screen, tap on your camera to open the details screen. There you have an option to enable the "Always On" mode, which will keep the app in the foreground</string>
 
 
-    <!-- Welcome screen strings -->
-    <string name="welcome_app_icon_description">Camera GPS App Icon</string>
-    <string name="welcome_title">Welcome to Alpha GPS</string>
-    <string name="welcome_subtitle">Sync your camera\'s location with your phone\'s GPS</string>
-    <string name="welcome_feature_connect_title">Connect Your Camera</string>
-    <string name="welcome_feature_connect_description">Pair your camera with your phone via Bluetooth to establish a connection.</string>
-    <string name="welcome_feature_gps_sync_title">Automatic GPS Sync</string>
-    <string name="welcome_feature_gps_sync_description">Your phone\'s GPS location is automatically sent to your camera when taking photos.</string>
-    <string name="welcome_feature_device_management_title">Device Management</string>
-    <string name="welcome_feature_device_management_description">Manage paired cameras, view connection status, and configure settings easily.</string>
-    <string name="welcome_get_started_button">Get Started</string>
-    <string name="welcome_settings_note">You can access this information again from the app settings.</string>
-    <string name="associated_devices">Associated Devices:</string>
-    <string name="no_devices_title">No Associated Devices</string>
-    <string name="no_devices_message">Any associated devices will appear here once paired. Tap the button on the top to find and associate your camera.</string>
+    <string name="faq_permissions_question">What permissions does the app need?</string>
+    <string name="faq_permissions_answer">The app requires:\n• Location permissions (for GPS data)\n• Bluetooth permissions (to connect to camera)\n• Battery optimization exemption (for continuous service)\n• Nearby devices permission (for device discovery)</string>
+
+    <string name="faq_gps_accuracy_question">How accurate is the GPS data?</string>
+    <string name="faq_gps_accuracy_answer">GPS accuracy depends on:\n• Satellite visibility (better outdoors)\n• Weather conditions\n• Your phone\'s GPS capabilities\n• Typical accuracy is 3-5 meters under good conditions</string>
+
+    <string name="faq_background_work_question">Does the app work in the background?</string>
+    <string name="faq_background_work_answer">Yes, once properly configured:\n• The service runs in the background to maintain GPS sync\n• Make sure to disable battery optimization\n• The app will show a persistent notification when active\n• GPS data is continuously sent to your connected camera</string>
+
+    <string name="faq_disconnects_question">My camera disconnects frequently. What can I do?</string>
+    <string name="faq_disconnects_answer">Try these solutions:\n• Keep your phone closer to the camera\n• Disable battery optimization for the app\n• Check if your camera has power saving modes that affect Bluetooth\n• Restart both devices and re-pair if necessary</string>
+
+    <!-- Help menu item -->
+    <string name="help_menu_item">Help</string>
+
+    <!-- Additional missing strings for device management -->
+    <string name="associated_devices">Associated Devices</string>
+    <string name="no_devices_title">No cameras connected</string>
+    <string name="no_devices_message">Tap the button above to start pairing your camera device.</string>
+
+    <!-- Error messages for device association -->
+    <string name="the_request_was_canceled">The request was canceled</string>
+    <string name="internal_error_happened">An internal error occurred</string>
+    <string name="no_device_matching_the_given_filter_were_found">No devices matching the given filter were found</string>
+    <string name="the_user_explicitly_declined_the_request">The user declined the request</string>
+
+    <!-- Device detail screen strings -->
+    <string name="back">Back</string>
+    <string name="enable_device">Enable device</string>
+    <string name="enableConstantly">Keep alive (always on)</string>
+
+    <!-- Device limitation hint -->
+    <string name="single_device_limitation_hint">Currently only one camera device is supported. Multiple device support will be added in a future update.</string>
 
     <!-- Battery optimization dialog strings -->
     <string name="battery_optimization_title">Battery Optimization</string>
@@ -95,5 +134,19 @@
     <string name="battery_optimization_proceed">Open Settings</string>
     <string name="battery_optimization_cancel">Cancel</string>
     <string name="battery_optimization_dont_show">Don\'t show again</string>
+
+    <!-- Xiaomi-specific battery optimization strings -->
+    <string name="battery_optimization_xiaomi_title">Xiaomi Battery Optimization</string>
+    <string name="battery_optimization_xiaomi_message">Xiaomi devices require additional steps to ensure the app works reliably in the background:\n\n1. Open Battery Optimization settings\n2. Set this app to "Don\'t optimize"\n3. Go to Settings > Apps > Manage apps\n4. Find this app and enable "Autostart"\n5. Set "Background app limits" to "No restrictions"</string>
+    <string name="battery_optimization_xiaomi_autostart">Open Autostart Settings</string>
+    <string name="battery_optimization_xiaomi_battery">Open Battery Settings</string>
+
+
+    <string name="not_paired_tap_to_pair_again">Not paired, tap device to pair again</string>
+    <string name="to_pair_with_your_camera_please">To pair with your camera \'%1$s\', please:</string>
+    <string name="_1_turn_on_your_camera">\n1. Turn on your camera</string>
+    <string name="_2_go_to_camera_settings_and_enable_bluetooth_pairing_mode">2. Go to camera settings and enable Bluetooth/Pairing mode</string>
+    <string name="_3_make_sure_the_camera_is_discoverable">3. Make sure the camera is discoverable</string>
+    <string name="once_your_camera_is_ready_tap_continue_to_start_pairing">\nOnce your camera is ready, tap \'Continue\' to start pairing.</string>
 
 </resources>
