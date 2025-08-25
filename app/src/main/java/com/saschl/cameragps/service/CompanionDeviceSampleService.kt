@@ -84,11 +84,10 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
             Timber.i("Device disappeared new API: ${event.associationId}")
 
             // Request graceful shutdown instead of immediate termination
-            /*   val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
+            val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
                    action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
-               }*/
-            //startService(shutdownIntent)
-            stopService(Intent(this, LocationSenderService::class.java))
+            }
+            startService(shutdownIntent)
         }
     }
 
@@ -143,13 +142,11 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
         // Still very weird and should be handled better
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
             // Request graceful shutdown instead of immediate termination
-            val shutdownIntent = Intent(this, LocationSenderService::class.java)
+            val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
+                action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
+            }
 
-
-            stopService(shutdownIntent)
-            // startService(shutdownIntent)
-
-            //Thread.sleep(6000) // Wait for the service to start and handle the shutdown request
+            startService(shutdownIntent)
         }
 
     }

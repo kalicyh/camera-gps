@@ -254,8 +254,11 @@ class LocationSenderService : Service() {
 
     @SuppressLint("MissingPermission")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        
+        val address = intent?.getStringExtra("address")
+
         // Check if this is a shutdown request
-        if (intent?.action == ACTION_REQUEST_SHUTDOWN) {
+        if (intent?.action == ACTION_REQUEST_SHUTDOWN && !PreferencesManager.isKeepAliveEnabled(this, address)) {
             requestShutdown()
             return START_REDELIVER_INTENT
         }
@@ -267,7 +270,7 @@ class LocationSenderService : Service() {
 
         this.startId = startId;
 
-        val address = intent?.getStringExtra("address")
+        
         startedManually = intent?.getBooleanExtra("startedManually", false) ?: false
         var device: BluetoothDevice? = null
 
@@ -448,7 +451,7 @@ class LocationSenderService : Service() {
         }
 
         isShutdownRequested = true
-        Timber.i("Shutdown requested, will terminate in ${SHUTDOWN_DELAY_MS / 1000} seconds")
+        //Timber.i("Shutdown requested, will terminate in ${SHUTDOWN_DELAY_MS / 1000} seconds")
 
         // Create single-threaded executor if needed
 /*        if (shutdownExecutor == null) {
