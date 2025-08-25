@@ -248,28 +248,28 @@ class LocationSenderService : Service() {
                 requestShutdown(startId)
                 return START_NOT_STICKY
             }
-        }
-
-        // Cancel any pending shutdown since we're starting normally
-        cancelShutdown()
-        startAsForegroundService()
-
-        this.pendingShutdownStartId = startId;
-
-        val address = intent?.getStringExtra("address")
-
-        this.address = address
-
-        startedManually = intent?.getBooleanExtra("startedManually", false) ?: false
-
-        val device: BluetoothDevice = bluetoothManager.adapter.getRemoteDevice(address)
-
-        if (gatt1 != null) {
-            Timber.i("Gatt will be reused")
         } else {
-            Timber.i("Gatt will be created")
+            // Cancel any pending shutdown since we're starting normally
+            cancelShutdown()
+            startAsForegroundService()
 
-            gatt1 = device.connectGatt(this, true, callback)
+            this.pendingShutdownStartId = startId;
+
+            val address = intent?.getStringExtra("address")
+
+            this.address = address
+
+            startedManually = intent?.getBooleanExtra("startedManually", false) ?: false
+
+            val device: BluetoothDevice = bluetoothManager.adapter.getRemoteDevice(address)
+
+            if (gatt1 != null) {
+                Timber.i("Gatt will be reused")
+            } else {
+                Timber.i("Gatt will be created")
+
+                gatt1 = device.connectGatt(this, true, callback)
+            }
         }
         return START_REDELIVER_INTENT
     }
