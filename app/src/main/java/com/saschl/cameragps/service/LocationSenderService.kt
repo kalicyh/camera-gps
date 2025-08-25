@@ -65,13 +65,14 @@ class LocationSenderService : Service() {
 
     companion object {
 
-        // Random UUID for our service known between the client and server to allow communication
+        // Service UUID of the sony cameras
         val SERVICE_UUID: UUID = UUID.fromString("8000dd00-dd00-ffff-ffff-ffffffffffff")
 
-        // Same as the service but for the characteristic
+        // Characteristic for the location services
         val CHARACTERISTIC_UUID: UUID = UUID.fromString("0000dd11-0000-1000-8000-00805f9b34fb")
         val CHARACTERISTIC_READ_UUID: UUID = UUID.fromString("0000dd21-0000-1000-8000-00805f9b34fb")
 
+        // needed for some cameras to enable the functionality
         val CHARACTERISTIC_ENABLE_GPS_COMMAND: UUID =
             UUID.fromString("0000dd30-0000-1000-8000-00805f9b34fb")
         val CHARACTERISTIC_ENABLED_GPS_COMMAND: UUID =
