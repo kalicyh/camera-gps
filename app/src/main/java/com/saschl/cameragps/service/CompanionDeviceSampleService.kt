@@ -37,7 +37,7 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU || missingPermissions()) {
             return
         }
-        Timber.i("Device appeared oldes API: $address")
+        Timber.i("Device appeared oldest API: $address")
 
         startLocationSenderService(address)
     }
@@ -144,6 +144,7 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
             // Request graceful shutdown instead of immediate termination
             val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
                 action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
+
             }
 
             startService(shutdownIntent)
