@@ -38,7 +38,6 @@ class LocationSenderService : Service() {
 
     private var address: String? = null
     private var shouldSendTimeZoneAndDst: Boolean = true
-    private var startId: Int = 0
     private val binder = LocalBinder()
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -50,7 +49,8 @@ class LocationSenderService : Service() {
     private var startedManually: Boolean = false
     private var isShutdownRequested = false
 
-    //private val handlerThread = HandlerThread("LocationSenderServiceThread")
+    private val handler = Handler(Looper.getMainLooper())
+    private var pendingShutdownStartId: Int = 0
 
     companion object {
 
@@ -72,7 +72,6 @@ class LocationSenderService : Service() {
         // Shutdown delay in milliseconds (1 minute)
         private const val SHUTDOWN_DELAY_MS = 60 * 1000L
 
-        private val handler = Handler(Looper.getMainLooper())
     }
 
     private val bluetoothManager: BluetoothManager by lazy {
@@ -201,7 +200,7 @@ class LocationSenderService : Service() {
                     ).build(), locationCallback, Looper.getMainLooper()
                 )
             }
-            if(status != BluetoothGatt.GATT_SUCCESS) {
+            if (status != BluetoothGatt.GATT_SUCCESS) {
                 Timber.e("Error writing characteristic: $status")
             }
         }
@@ -240,26 +239,26 @@ class LocationSenderService : Service() {
 
         val currentAddress = this.address
         // Check if this is a shutdown request
-        if (intent?.action == ACTION_REQUEST_SHUTDOWN && currentAddress != null &&
-                !PreferencesManager.isKeepAliveEnabled(this, currentAddress)
-        ) {
-            requestShutdown()
-            return START_NOT_STICKY
+        if (intent?.action == ACTION_REQUEST_SHUTDOWN) {
+            if (currentAddress == null || !PreferencesManager.isKeepAliveEnabled(
+                    this,
+                    currentAddress
+                )
+            ) {
+                requestShutdown(startId)
+                return START_NOT_STICKY
+            }
         }
 
         // Cancel any pending shutdown since we're starting normally
         cancelShutdown()
         startAsForegroundService()
 
-        this.startId = startId;
+        this.pendingShutdownStartId = startId;
 
         val address = intent?.getStringExtra("address")
 
-        synchronized(
-            this
-        ) {
-            this.address = address
-        }
+        this.address = address
 
         startedManually = intent?.getBooleanExtra("startedManually", false) ?: false
 
@@ -281,6 +280,9 @@ class LocationSenderService : Service() {
 
         // Clean up shutdown timer
         cancelShutdown()
+
+        gatt1?.close()
+        gatt1 = null
 
         if (locationCallback != null) {
             fusedLocationClient.removeLocationUpdates(locationCallback)
@@ -413,7 +415,7 @@ class LocationSenderService : Service() {
                     data,
                     BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT,
                 )
-                if(result != 0) {
+                if (result != 0) {
                     Timber.e("Writing characteristic failed. Result: $result")
                 }
             }
@@ -429,7 +431,9 @@ class LocationSenderService : Service() {
     }
 
     @SuppressLint("MissingPermission")
-    fun requestShutdown() {
+    fun requestShutdown(startId: Int) {
+
+        val startId = startId
         if (isShutdownRequested) {
             Timber.i("Shutdown already requested, ignoring duplicate request")
             return
@@ -437,38 +441,22 @@ class LocationSenderService : Service() {
 
         isShutdownRequested = true
 
-        handler.postDelayed({
-            Timber.i("Shutdown timer expired, terminating service")
-            gatt1?.disconnect()
-            gatt1?.close()
-            gatt1 = null
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
-
-        }, SHUTDOWN_DELAY_MS)
+        stopSelfResult(startId)
 
 
-        //Timber.i("Shutdown requested, will terminate in ${SHUTDOWN_DELAY_MS / 1000} seconds")
-
-        // Create single-threaded executor if needed
-        /*        if (shutdownExecutor == null) {
-                    shutdownExecutor = Executors.newSingleThreadScheduledExecutor { r ->
-                        Thread(r, "shutdown-timer").apply {
-                            isDaemon = true
-                        }
-                    }
+        /*handler.postDelayed({
+            if (isShutdownRequested) {
+                Timber.i("Shutdown timer expired, terminating service")
+                //stopForeground(STOP_FOREGROUND_REMOVE)
+                if () {
+                    Timber.i("Service stopped successfully")
+                } else {
+                    Timber.i("new startId received, not stopping service")
                 }
+                isShutdownRequested = false
+            }
 
-                shutdownFuture = shutdownExecutor?.schedule({
-                    if (isShutdownRequested) {
-                        Timber.i("Shutdown timer expired, terminating service")
-                        // Switch back to main thread for UI operations
-                        Handler(Looper.getMainLooper()).post {
-                            stopForeground(STOP_FOREGROUND_REMOVE)
-                            stopSelf()
-                        }
-                    }
-                }, SHUTDOWN_DELAY_MS, TimeUnit.MILLISECONDS)*/
+        }, SHUTDOWN_DELAY_MS)*/
     }
 
     /**
@@ -479,6 +467,7 @@ class LocationSenderService : Service() {
             Timber.i("Cancelling pending shutdown")
             /* shutdownFuture?.cancel(false)
              shutdownFuture = null*/
+            handler.removeCallbacksAndMessages(null)
             isShutdownRequested = false
         }
     }

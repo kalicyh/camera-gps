@@ -23,11 +23,17 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
 
     private fun startLocationSenderService(address: String?) {
         if (PreferencesManager.isAppEnabled(this)) {
-            val serviceIntent = Intent(this, LocationSenderService::class.java)
-            serviceIntent.putExtra("address", address?.uppercase(Locale.getDefault()))
-            Timber.i("Starting LocationSenderService for address: $address in 5 seconds")
 
-            startForegroundService(serviceIntent)
+            if(!isLocationServiceRunning()) {
+                val serviceIntent = Intent(this, LocationSenderService::class.java)
+                serviceIntent.putExtra("address", address?.uppercase(Locale.getDefault()))
+                Timber.i("Starting LocationSenderService for address: $address")
+
+                startForegroundService(serviceIntent)
+            } else {
+                Timber.i("LocationSenderService already running, will cancel pending shutdowns")
+            }
+
         }
     }
 
@@ -75,19 +81,17 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
             val associationInfo = associatedDevices?.find { it.id == associationId }
             val address = associationInfo?.deviceMacAddress?.toString()
 
-            if (!isLocationServiceRunning()) {
-                startLocationSenderService(address)
-            }
+            startLocationSenderService(address)
         }
 
         if (event.event == DevicePresenceEvent.EVENT_BLE_DISAPPEARED) {
             Timber.i("Device disappeared new API: ${event.associationId}")
 
             // Request graceful shutdown instead of immediate termination
-            val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
-                   action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
+           /* val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
+                action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
             }
-            startService(shutdownIntent)
+            startService(shutdownIntent)*/
         }
     }
 
@@ -140,16 +144,13 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
         // For some reason Android 12 immediately kills the service without onDeviceDisappeared.
         // FOr now it seems to work as it finds the device again after some time so it's more or less ok
         // Still very weird and should be handled better
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
-            // Request graceful shutdown instead of immediate termination
-            val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
-                action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
+        // the disappeared event also seems to be missed sometimes.. we will request shutdown here as well
+        // Request graceful shutdown instead of immediate termination
+        val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
+            action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
 
-            }
-
-            startService(shutdownIntent)
         }
-
+        startService(shutdownIntent)
     }
 
 
