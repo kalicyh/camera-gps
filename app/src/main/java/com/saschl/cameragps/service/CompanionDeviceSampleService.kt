@@ -19,6 +19,7 @@ import timber.log.Timber
 import java.util.Locale
 
 
+@RequiresApi(Build.VERSION_CODES.S)
 class CompanionDeviceSampleService : CompanionDeviceService() {
 
     private fun startLocationSenderService(address: String?) {

@@ -35,7 +35,7 @@
     <string name="background_location_instruction">Bitte im nächsten Dialog \"Immer erlauben\" auswählen</string>
     <string name="background_location_access_message">Standortzugriff im Hintergrund ermöglicht:</string>
     <string name="remove">Entfernen</string>
-    <string name="not_paired_tap_to_pair_again">Nicht gekoppelt. Berühren um erneut zu koppeln.</string>
+    <string name="not_paired_tap_to_pair_again">Nicht gekoppelt. Bitte das Gerät erneut in den Bluetooth Einstellungen koppeln</string>
     <string name="to_pair_with_your_camera_please">Um die Kamera \'%1$s\' zu koppeln, bitte:</string>
     <string name="_1_turn_on_your_camera">1. Schalte die Kamera ein</string>
     <string name="_2_go_to_camera_settings_and_enable_bluetooth_pairing_mode">2. Gehe in die Einstellungen und schalte Bluetooth ein.</string>
@@ -131,5 +131,6 @@
 
     <!-- Device limitation hint -->
     <string name="single_device_limitation_hint">Derzeit wird nur eine Kamera gleichzeitig unterstützt. Unterstützung für mehrere Geräte wird in einem zukünftigen Update hinzugefügt.</string>
+    <string name="android_12_requires_keep_alive">Smartphones mit Android 11 oder niedriger müssen den "Immer An" Modus aktivieren. Tippen sie auf die Kamera und aktivieren sie die Einstellung</string>
 
 </resources>

@@ -16,6 +16,8 @@
 
 package com.saschl.cameragps.service
 
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.companion.AssociationInfo
 import android.companion.CompanionDeviceManager
@@ -35,7 +37,8 @@ data class AssociatedDeviceCompat(
 )
 
 
-internal fun CompanionDeviceManager.getAssociatedDevices(): List<AssociatedDeviceCompat> {
+@SuppressLint("MissingPermission")
+internal fun CompanionDeviceManager.getAssociatedDevices(adapter: BluetoothAdapter): List<AssociatedDeviceCompat> {
     val associatedDevice = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         myAssociations.map { it.toAssociatedDevice() }
     } else {
@@ -46,7 +49,7 @@ internal fun CompanionDeviceManager.getAssociatedDevices(): List<AssociatedDevic
             AssociatedDeviceCompat(
                 id = -1,
                 address = it.uppercase(Locale.getDefault()),
-                name = "",
+                name = adapter.getRemoteDevice(it.uppercase()).name,
                 device = null,
             )
         }

@@ -142,11 +142,12 @@
     <string name="battery_optimization_xiaomi_battery">Open Battery Settings</string>
 
 
-    <string name="not_paired_tap_to_pair_again">Not paired, tap device to pair again</string>
+    <string name="not_paired_tap_to_pair_again">Not paired, please pair the device in the bluetooth settings</string>
     <string name="to_pair_with_your_camera_please">To pair with your camera \'%1$s\', please:</string>
     <string name="_1_turn_on_your_camera">\n1. Turn on your camera</string>
     <string name="_2_go_to_camera_settings_and_enable_bluetooth_pairing_mode">2. Go to camera settings and enable Bluetooth/Pairing mode</string>
     <string name="_3_make_sure_the_camera_is_discoverable">3. Make sure the camera is discoverable</string>
     <string name="once_your_camera_is_ready_tap_continue_to_start_pairing">\nOnce your camera is ready, tap \'Continue\' to start pairing.</string>
+    <string name="android_12_requires_keep_alive">Devices running Android 11 and below must enable keepalive mode. Tap the device and enable the setting</string>
 
 </resources>

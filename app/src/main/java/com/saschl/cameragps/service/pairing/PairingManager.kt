@@ -17,6 +17,7 @@
 package com.saschl.cameragps.service.pairing
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
@@ -221,6 +222,7 @@ fun PairingManager(
 /**
  * Handles the pairing confirmation logic
  */
+@SuppressLint("MissingPermission")
 private fun handlePairingConfirmation(
     context: Context,
     device: AssociatedDeviceCompat,
@@ -268,6 +270,8 @@ fun startDevicePresenceObservation(
             ObservingDevicePresenceRequest.Builder().setAssociationId(device.id).build()
         )
     } else {
-        deviceManager.startObservingDevicePresence(device.address)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            deviceManager.startObservingDevicePresence(device.address)
+        }
     }
 }

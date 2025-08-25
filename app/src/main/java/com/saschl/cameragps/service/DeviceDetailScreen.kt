@@ -3,6 +3,7 @@ package com.saschl.cameragps.service
 import android.Manifest
 import android.companion.CompanionDeviceManager
 import android.content.Intent
+import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.layout.Arrangement
@@ -176,7 +177,10 @@ fun DeviceDetailScreen(
                             isDeviceEnabled = enabled
                             PreferencesManager.setDeviceEnabled(context, device.address, enabled)
                             if(!enabled) {
-                                deviceManger.stopObservingDevicePresence(device.address)
+
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                    deviceManger.stopObservingDevicePresence(device.address)
+                                }
                                 Timber.i("Stopping LocationSenderService from detail for device ${device.address}")
                                 context.stopService(Intent(context.applicationContext, LocationSenderService::class.java))
                             } else {
@@ -203,8 +207,10 @@ fun DeviceDetailScreen(
                             PreferencesManager.setKeepAliveEnabled(context, device.address, enabled)
                             val intent = Intent(context, LocationSenderService::class.java)
                             intent.putExtra("address", device.address.uppercase())
-                            if(enabled) {
-                                deviceManger.stopObservingDevicePresence(device.address)
+                            if (enabled) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                    deviceManger.stopObservingDevicePresence(device.address)
+                                }
 
                                 context.startForegroundService(intent)
                             } else {

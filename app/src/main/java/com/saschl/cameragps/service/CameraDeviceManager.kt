@@ -22,6 +22,7 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanResult
 import android.companion.AssociationInfo
 import android.companion.AssociationRequest
 import android.companion.BluetoothLeDeviceFilter
@@ -87,6 +88,7 @@ import com.saschl.cameragps.service.pairing.isDevicePaired
 import com.saschl.cameragps.service.pairing.startDevicePresenceObservation
 import com.saschl.cameragps.ui.EnhancedLocationPermissionBox
 import com.saschl.cameragps.ui.LogViewerActivity
+import com.saschl.cameragps.utils.PreferencesManager
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -113,7 +115,7 @@ fun CameraDeviceManager(
 
     var associatedDevices by remember {
         // If we already associated the device no need to do it again.
-        mutableStateOf(deviceManager!!.getAssociatedDevices())
+        mutableStateOf(deviceManager!!.getAssociatedDevices(adapter!!))
     }
 
 
@@ -127,7 +129,7 @@ fun CameraDeviceManager(
             Lifecycle.State.CREATED -> {}
             Lifecycle.State.STARTED -> {}
             Lifecycle.State.RESUMED -> {
-                associatedDevices = deviceManager!!.getAssociatedDevices()
+                associatedDevices = deviceManager!!.getAssociatedDevices(adapter!!)
             }
         }
     }
@@ -144,9 +146,7 @@ fun CameraDeviceManager(
                         scope.launch {
                             delay(1000) // give the system a short time to breathe
                             startDevicePresenceObservation(deviceManager, it)
-                            associatedDevices =
-                                associatedDevices.filter { associatedDevice -> associatedDevice != it }; it.isPaired =
-                            true; associatedDevices = associatedDevices + it
+                            //associatedDevices = associatedDevices + it
                         }
 
                     },
@@ -165,6 +165,8 @@ fun CameraDeviceManager(
                     associatedDevices.find { ass -> ass.address == it.address }?.let { it ->
                         Timber.i("Disassociating device: ${it.name} (${it.address})")
                         scope.launch {
+
+                            PreferencesManager.setKeepAliveEnabled(context, it.address, false)
 
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
                                 deviceManager.stopObservingDevicePresence(
@@ -189,7 +191,7 @@ fun CameraDeviceManager(
                             )
                             context.stopService(serviceIntent)
 
-                            associatedDevices = deviceManager.getAssociatedDevices()
+                            associatedDevices = deviceManager.getAssociatedDevices(adapter)
                         }
                         selectedDevice = null
                     }
@@ -582,17 +584,26 @@ private fun AssociatedDevicesList(
                     ) {
                         Text(
                             fontWeight = FontWeight.Bold,
-                            text = if (device.name == "N/A") adapter?.getRemoteDevice(device.address)!!.name else device.name
+                            text =  device.name
                         )
 
-                        /*if (!isPaired) {
+                        if (!isPaired) {
                             Text(
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodySmall,
                                 text = context.getString(R.string.not_paired_tap_to_pair_again),
                             )
+                        }
+                        if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.S
+                            && !PreferencesManager.isKeepAliveEnabled(context, device.address)) {
+                            Text(
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                text = context.getString(R.string.android_12_requires_keep_alive),
+                            )
+                        }
 
-                            // TODO refactor into separate method
+                            /* TODO refactor into separate method
                             // TODO extract logic to service properly this should not be in UI
                             // Request graceful shutdown instead of immediate termination
                             val shutdownIntent = Intent(
@@ -713,15 +724,30 @@ private fun Intent.getAssociationResult(): AssociatedDeviceCompat? {
         // to the BLE ScanResult
         // FIXME for some reason it does return a BluetoothDevice so we need to handle that
         @Suppress("DEPRECATION")
-        val scanResult = getParcelableExtra<BluetoothDevice>(CompanionDeviceManager.EXTRA_DEVICE)
-        if (scanResult != null) {
-            result = AssociatedDeviceCompat(
-                id = -1, //no id
-                address = scanResult.address ?: "N/A",
-                name = scanResult.name ?: "N/A",
-                device = scanResult,
-            )
+        try {
+            val scanResult = getParcelableExtra<BluetoothDevice>(CompanionDeviceManager.EXTRA_DEVICE)
+            if (scanResult != null) {
+                result = AssociatedDeviceCompat(
+                    id = -1, //no id
+                    address = scanResult.address ?: "N/A",
+                    name = scanResult.name ?: "N/A",
+                    device = scanResult,
+                )
+            }
+        } catch (ex: ClassCastException) {
+            // Not a BLE device
+            Timber.e( "API level is below 33 but it is not a BluetoothDevice. Trying with scanresult")
+            val scanResult = getParcelableExtra<ScanResult>(CompanionDeviceManager.EXTRA_DEVICE)
+            result = scanResult?.let {
+                AssociatedDeviceCompat(
+                    id = it.advertisingSid, //no id
+                    address = it.device.address ?: "N/A",
+                    name = it.device.name ?: "N/A",
+                    device = it.device,
+                )
+            }
         }
+
     }
     return result
 
@@ -743,6 +769,7 @@ private suspend fun requestDeviceAssociation(
 
     val callback = object : CompanionDeviceManager.Callback() {
         override fun onAssociationPending(intentSender: IntentSender) {
+            Timber.i("Association pending")
             result.complete(intentSender)
         }
 
@@ -755,6 +782,15 @@ private suspend fun requestDeviceAssociation(
 
         override fun onFailure(errorMessage: CharSequence?) {
             result.completeExceptionally(IllegalStateException(errorMessage?.toString().orEmpty()))
+        }
+
+        override fun onDeviceFound(intentSender: IntentSender) {
+            if(Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                Timber.i("Device found")
+                // On Android < 12 we get the device found callback instead of association pending
+                result.complete(intentSender)
+            }
+            //super.onDeviceFound(intentSender)
         }
     }
 

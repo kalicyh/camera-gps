@@ -11,10 +11,10 @@ android {
 
     defaultConfig {
         applicationId = "com.saschl.cameragps"
-        minSdk = 31
+        minSdk = 29
         targetSdk = 36
-        versionCode = 61
-        versionName = "v1.0.61"
+        versionCode = 63
+        versionName = "v1.0.63"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
