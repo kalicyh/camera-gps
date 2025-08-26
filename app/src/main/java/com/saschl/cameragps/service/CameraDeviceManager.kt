@@ -18,8 +18,6 @@ package com.saschl.cameragps.service
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
@@ -201,21 +199,6 @@ fun CameraDeviceManager(
         }
     }
 }
-
-
-private data class DeviceConnectionState(
-    val gatt: BluetoothGatt?,
-    val connectionState: Int,
-    val mtu: Int,
-    val services: List<BluetoothGattService> = emptyList(),
-    val messageSent: Boolean = false,
-    val messageReceived: String = "",
-) {
-    companion object {
-        val None = DeviceConnectionState(null, -1, -1)
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("MissingPermission")
 @Composable
@@ -227,8 +210,6 @@ private fun DevicesScreen(
     onSettingsClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
-
-    val scope = rememberCoroutineScope()
 
     // State for managing pairing after association
     var pendingPairingDevice by remember { mutableStateOf<AssociatedDeviceCompat?>(null) }
@@ -341,11 +322,7 @@ private fun DevicesScreen(
 
             AssociatedDevicesList(
                 associatedDevices = associatedDevices,
-                deviceManager,
-                onConnect = onConnect,
-                onSetPendingPairingDevice = { device ->
-                    pendingPairingDevice = device
-                }
+                onConnect = onConnect
             )
             // Handle pairing for newly associated device
             pendingPairingDevice?.let { device ->
@@ -484,9 +461,7 @@ private fun ScanForDevicesMenu(
 @Composable
 private fun AssociatedDevicesList(
     associatedDevices: List<AssociatedDeviceCompat>,
-    deviceManager: CompanionDeviceManager,
     onConnect: (AssociatedDeviceCompat) -> Unit,
-    onSetPendingPairingDevice: (AssociatedDeviceCompat) -> Unit,
 ) {
 
     val context = LocalContext.current
@@ -602,31 +577,6 @@ private fun AssociatedDevicesList(
                                 text = context.getString(R.string.android_12_requires_keep_alive),
                             )
                         }
-
-                            /* TODO refactor into separate method
-                            // TODO extract logic to service properly this should not be in UI
-                            // Request graceful shutdown instead of immediate termination
-                            val shutdownIntent = Intent(
-                                context.applicationContext,
-                                LocationSenderService::class.java
-                            ).apply {
-                                action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
-                            }
-                            context.startService(shutdownIntent)
-
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                                deviceManager.stopObservingDevicePresence(
-                                    ObservingDevicePresenceRequest.Builder()
-                                        .setAssociationId(device.id)
-                                        .build()
-                                )
-
-                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                @Suppress("DEPRECATION")
-                                deviceManager.stopObservingDevicePresence(device.address)
-                            }
-                        }*/
-
                     }
                     Column(
                         Modifier
@@ -651,61 +601,6 @@ private fun AssociatedDevicesList(
                 )
             }
         }
-        // FIXME pairing logic needs to be refactored so that it can be used here as well
-        // This is for adding pairing logic to the "Pair new camera" button as the last element (TBC)
-        /* Row(
-             Modifier
-                 .fillMaxWidth()
-                 *//* .background(color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = RoundedCornerShape(16.dp))*//*
-                *//* .border(
-                    width = 2.dp,
-                    color = MaterialTheme.colorScheme.outline,
-                    shape = RoundedCornerShape(16.dp)
-                )*//*.padding(24.dp)
-                .clickable(true, onClick = {  }),
-
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-
-            ) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .weight(0.2f),
-            ) {
-                Icon(
-                    painterResource(R.drawable.outline_add_circle_24),
-                    contentDescription = "Device Icon"
-                )
-
-            }
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-            ) {
-                Text(fontWeight = FontWeight.Bold, text = "Pair new camera")
-            }
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .weight(0.8f),
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                *//* IconButton(onClick = {onConnect(device)}) {*//*
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Hi")
-                *//*   }*//*
-                *//*   OutlinedButton(
-                    onClick = { onConnect(device) },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(text = "Connect")
-                }*//*
-
-            }
-        }*/
     }
 }
 
@@ -776,7 +671,6 @@ private suspend fun requestDeviceAssociation(
         override fun onAssociationCreated(associationInfo: AssociationInfo) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 Timber.i("Association created: ${associationInfo.displayName} (${associationInfo.id})")
-                //startDevicePresenceObservation(deviceManager, associationInfo.toAssociatedDevice())
             }
         }
 
@@ -790,7 +684,6 @@ private suspend fun requestDeviceAssociation(
                 // On Android < 12 we get the device found callback instead of association pending
                 result.complete(intentSender)
             }
-            //super.onDeviceFound(intentSender)
         }
     }
 

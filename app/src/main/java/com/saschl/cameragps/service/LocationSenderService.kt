@@ -1,5 +1,6 @@
 package com.saschl.cameragps.service
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Service
 import android.bluetooth.BluetoothDevice
@@ -15,6 +16,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import androidx.annotation.RequiresPermission
 import androidx.core.app.ServiceCompat
 import androidx.core.content.getSystemService
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -42,11 +44,10 @@ class LocationSenderService : Service() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
-    private var gatt1: BluetoothGatt? = null
+    private var cameraGatt: BluetoothGatt? = null
 
     private var writeLocationCharacteristic: BluetoothGattCharacteristic? = null
-    private var locationResultVar: Location = Location("")
-    private var startedManually: Boolean = false
+    private var locationResult: Location = Location("")
     private var isShutdownRequested = false
 
     private val handler = Handler(Looper.getMainLooper())
@@ -69,9 +70,6 @@ class LocationSenderService : Service() {
 
         const val ACTION_REQUEST_SHUTDOWN = "com.saschl.cameragps.ACTION_REQUEST_SHUTDOWN"
 
-        // Shutdown delay in milliseconds (1 minute)
-        private const val SHUTDOWN_DELAY_MS = 60 * 1000L
-
     }
 
     private val bluetoothManager: BluetoothManager by lazy {
@@ -86,6 +84,137 @@ class LocationSenderService : Service() {
         return binder
     }
 
+    private fun hasTimeZoneDstFlag(value: ByteArray): Boolean {
+        return value.size >= 5 && (value[4].toInt() and 0x02) != 0
+    }
+
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
+    private fun startLocationTransmission() {
+        fusedLocationClient.lastLocation.addOnSuccessListener {
+            if (it != null) {
+                locationResult = it
+                sendData(cameraGatt, writeLocationCharacteristic)
+            }
+        }
+        fusedLocationClient.requestLocationUpdates(
+            LocationRequest.Builder(
+                Priority.PRIORITY_HIGH_ACCURACY,
+                5000,
+            ).build(), locationCallback, Looper.getMainLooper()
+        )
+    }
+
+    @SuppressLint("MissingPermission")
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
+        val currentAddress = this.address
+        // Check if this is a shutdown request
+        if (intent?.action == ACTION_REQUEST_SHUTDOWN) {
+            if (currentAddress == null || !PreferencesManager.isKeepAliveEnabled(
+                    this,
+                    currentAddress
+                )
+            ) {
+                requestShutdown(startId)
+                return START_NOT_STICKY
+            }
+        } else {
+            // Cancel any pending shutdown since we're starting normally
+            cancelShutdown()
+            startAsForegroundService()
+
+            this.pendingShutdownStartId = startId;
+            address = intent?.getStringExtra("address")
+
+            val device: BluetoothDevice = bluetoothManager.adapter.getRemoteDevice(address)
+
+            if (cameraGatt != null) {
+                Timber.i("Gatt will be reused")
+            } else {
+                Timber.i("Gatt will be created")
+
+                cameraGatt = device.connectGatt(this, true, callback)
+            }
+        }
+        return START_REDELIVER_INTENT
+    }
+
+    @SuppressLint("MissingPermission")
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Clean up shutdown timer
+        cancelShutdown()
+
+        cameraGatt?.close()
+        cameraGatt = null
+
+        if (locationCallback != null) {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+        }
+        Timber.i("Destroyed service")
+    }
+
+    @SuppressLint("MissingPermission")
+    override fun onCreate() {
+        super.onCreate()
+        if (Timber.treeCount == 0) {
+            FileTree.initialize(this)
+            Timber.plant(Timber.DebugTree(), FileTree(this))
+
+            // Set up global exception handler to log crashes
+            val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+            Thread.setDefaultUncaughtExceptionHandler(GlobalExceptionHandler(defaultHandler))
+        }
+
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(fetchedLocation: LocationResult) {
+
+                // any location is better than none for now
+                val lastLocation = fetchedLocation.lastLocation
+                if (locationResult.provider.equals("") && lastLocation != null) {
+                    locationResult = lastLocation
+                    return
+                }
+
+                if (lastLocation != null) {
+                    // new location is way less accurate, only take if the old location is very old
+                    if ((lastLocation.accuracy - locationResult.accuracy) > 200) {
+                        Timber.w(
+                            "New location is way less accurate than the old one, will only update if the last location is older than 5 minutes"
+                        )
+                        if (lastLocation.time - locationResult.time > 1000 * 60 * 5) {
+                            Timber.d(
+                                "Last accurate location is older than 5 minutes, updating anyway"
+                            )
+                            locationResult = lastLocation
+                        }
+                    } else {
+                        locationResult = lastLocation
+                    }
+
+                }
+                sendData(cameraGatt, writeLocationCharacteristic)
+            }
+        }
+    }
+
+    private fun startAsForegroundService() {
+        // create the notification channel
+        NotificationsHelper.createNotificationChannel(this)
+
+        // promote service to foreground service
+        ServiceCompat.startForeground(
+            this,
+            404,
+            NotificationsHelper.buildNotification(this),
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION or ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+
+        )
+    }
+
     private val callback = object : BluetoothGattCallback() {
         @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(
@@ -98,10 +227,6 @@ class LocationSenderService : Service() {
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 Timber.e("An error happened: $status")
                 fusedLocationClient.removeLocationUpdates(locationCallback)
-
-                if (startedManually && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    stopSelf()
-                }
             } else {
                 Timber.i("Connected to device %d", status)
                 cancelShutdown()
@@ -120,6 +245,7 @@ class LocationSenderService : Service() {
             // If the GATTServerSample service is found, get the characteristic
             writeLocationCharacteristic = service?.getCharacteristic(CHARACTERISTIC_UUID)
 
+            // TODO reenable reading characteristic for DST and timezone support
             val readCharacteristic = service?.getCharacteristic(CHARACTERISTIC_READ_UUID)
 
             //enable GPS if needed
@@ -139,22 +265,9 @@ class LocationSenderService : Service() {
                     gatt.writeCharacteristic(gpsEnableCharacteristic)
                 }
             } else {
-                /*      if(!handlerThread.isAlive) {
-                          handlerThread.start()
-                      }*/
+
                 // characteristic to enable gps does not exist, starting transmission
-                fusedLocationClient.lastLocation.addOnSuccessListener {
-                    if (it != null) {
-                        locationResultVar = it
-                        sendData(gatt, writeLocationCharacteristic)
-                    }
-                }
-                fusedLocationClient.requestLocationUpdates(
-                    LocationRequest.Builder(
-                        Priority.PRIORITY_HIGH_ACCURACY,
-                        5000,
-                    ).build(), locationCallback, Looper.getMainLooper()
-                )
+                startLocationTransmission()
             }
             //gatt.readCharacteristic(readCharacteristic)
         }
@@ -187,18 +300,7 @@ class LocationSenderService : Service() {
                 }
             } else if (writtenCharacteristic?.uuid == CHARACTERISTIC_ENABLED_GPS_COMMAND) {
                 Timber.i("GPS flag enabled on device, will now send data")
-                fusedLocationClient.lastLocation.addOnSuccessListener {
-                    if (it != null) {
-                        locationResultVar = it
-                        sendData(gatt, writeLocationCharacteristic)
-                    }
-                }
-                fusedLocationClient.requestLocationUpdates(
-                    LocationRequest.Builder(
-                        Priority.PRIORITY_HIGH_ACCURACY,
-                        5000,
-                    ).build(), locationCallback, Looper.getMainLooper()
-                )
+                startLocationTransmission()
             }
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 Timber.e("Error writing characteristic: $status")
@@ -228,126 +330,9 @@ class LocationSenderService : Service() {
         }
 
         private fun doOnRead(value: ByteArray) {
-            shouldSendTimeZoneAndDst = (value.size >= 5 && value[4] and (2.toByte()) == 2.toByte())
+            shouldSendTimeZoneAndDst = hasTimeZoneDstFlag(value)
             Timber.i("Characteristic read, shouldSendTimeZoneAndDst: $shouldSendTimeZoneAndDst")
         }
-    }
-
-
-    @SuppressLint("MissingPermission")
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
-        val currentAddress = this.address
-        // Check if this is a shutdown request
-        if (intent?.action == ACTION_REQUEST_SHUTDOWN) {
-            if (currentAddress == null || !PreferencesManager.isKeepAliveEnabled(
-                    this,
-                    currentAddress
-                )
-            ) {
-                requestShutdown(startId)
-                return START_NOT_STICKY
-            }
-        } else {
-            // Cancel any pending shutdown since we're starting normally
-            cancelShutdown()
-            startAsForegroundService()
-
-            this.pendingShutdownStartId = startId;
-
-            val address = intent?.getStringExtra("address")
-
-            this.address = address
-
-            startedManually = intent?.getBooleanExtra("startedManually", false) ?: false
-
-            val device: BluetoothDevice = bluetoothManager.adapter.getRemoteDevice(address)
-
-            if (gatt1 != null) {
-                Timber.i("Gatt will be reused")
-            } else {
-                Timber.i("Gatt will be created")
-
-                gatt1 = device.connectGatt(this, true, callback)
-            }
-        }
-        return START_REDELIVER_INTENT
-    }
-
-    @SuppressLint("MissingPermission")
-    override fun onDestroy() {
-        super.onDestroy()
-
-        // Clean up shutdown timer
-        cancelShutdown()
-
-        gatt1?.close()
-        gatt1 = null
-
-        if (locationCallback != null) {
-            fusedLocationClient.removeLocationUpdates(locationCallback)
-        }
-        Timber.i("Destroyed service")
-    }
-
-    @SuppressLint("MissingPermission")
-    override fun onCreate() {
-        super.onCreate()
-        if (Timber.treeCount == 0) {
-            FileTree.initialize(this)
-            Timber.plant(Timber.DebugTree(), FileTree(this))
-
-            // Set up global exception handler to log crashes
-            val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
-            Thread.setDefaultUncaughtExceptionHandler(GlobalExceptionHandler(defaultHandler))
-        }
-
-
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(fetchedLocation: LocationResult) {
-
-                // any location is better than none for now
-                val lastLocation = fetchedLocation.lastLocation
-                if (locationResultVar.provider.equals("") && lastLocation != null) {
-                    locationResultVar = lastLocation
-                    return
-                }
-
-                if (lastLocation != null) {
-                    // new location is way less accurate, only take if the old location is very old
-                    if ((lastLocation.accuracy - locationResultVar.accuracy) > 200) {
-                        Timber.w(
-                            "New location is way less accurate than the old one, will only update if the last location is older than 5 minutes"
-                        )
-                        if (lastLocation.time - locationResultVar.time > 1000 * 60 * 5) {
-                            Timber.d(
-                                "Last accurate location is older than 5 minutes, updating anyway"
-                            )
-                            locationResultVar = lastLocation
-                        }
-                    } else {
-                        locationResultVar = lastLocation
-                    }
-
-                }
-                sendData(gatt1, writeLocationCharacteristic)
-            }
-        }
-    }
-
-    private fun startAsForegroundService() {
-        // create the notification channel
-        NotificationsHelper.createNotificationChannel(this)
-
-        // promote service to foreground service
-        ServiceCompat.startForeground(
-            this,
-            404,
-            NotificationsHelper.buildNotification(this),
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION or ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
-
-        )
     }
 
     @SuppressLint("MissingPermission")
@@ -373,7 +358,7 @@ class LocationSenderService : Service() {
         )
 
         // taken from https://github.com/mlapaglia/AlphaSync/blob/main/app/src/main/java/com.alphasync/sonycommand/SonyCommandGenerator.kt
-        val locationBytes = getConvertedCoordinates(locationResultVar)
+        val locationBytes = getConvertedCoordinates(locationResult)
         val dateBytes = getConvertedDate()
         val timeZoneOffsetBytes = getConvertedTimeZoneOffset(timeZoneId)
         val dstOffsetBytes = getConvertedDstOffset(timeZoneId)
@@ -442,21 +427,6 @@ class LocationSenderService : Service() {
         isShutdownRequested = true
 
         stopSelfResult(startId)
-
-
-        /*handler.postDelayed({
-            if (isShutdownRequested) {
-                Timber.i("Shutdown timer expired, terminating service")
-                //stopForeground(STOP_FOREGROUND_REMOVE)
-                if () {
-                    Timber.i("Service stopped successfully")
-                } else {
-                    Timber.i("new startId received, not stopping service")
-                }
-                isShutdownRequested = false
-            }
-
-        }, SHUTDOWN_DELAY_MS)*/
     }
 
     /**
@@ -465,9 +435,6 @@ class LocationSenderService : Service() {
     private fun cancelShutdown() {
         if (isShutdownRequested) {
             Timber.i("Cancelling pending shutdown")
-            /* shutdownFuture?.cancel(false)
-             shutdownFuture = null*/
-            handler.removeCallbacksAndMessages(null)
             isShutdownRequested = false
         }
     }
