@@ -54,12 +54,6 @@ fun CameraGpsTheme(
         else -> LightColorScheme
     }
 
-    val view = LocalView.current
-    val darkTheme = isSystemInDarkTheme()
-    SideEffect {
-        val window = (view.context as ComponentActivity).window
-        WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
-    }
 
     MaterialTheme(
         colorScheme = colorScheme,
