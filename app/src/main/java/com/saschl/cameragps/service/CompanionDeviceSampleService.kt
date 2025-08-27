@@ -148,7 +148,7 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
         // the disappeared event also seems to be missed sometimes.. we will request shutdown here as well
         // Request graceful shutdown instead of immediate termination
         val shutdownIntent = Intent(this, LocationSenderService::class.java).apply {
-            action = LocationSenderService.ACTION_REQUEST_SHUTDOWN
+            action = SonyBluetoothConstants.ACTION_REQUEST_SHUTDOWN
 
         }
         startService(shutdownIntent)

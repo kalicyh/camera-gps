@@ -13,7 +13,6 @@ import android.content.pm.ServiceInfo
 import android.location.Location
 import android.os.Binder
 import android.os.Build
-import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import androidx.annotation.RequiresPermission
@@ -28,18 +27,47 @@ import com.google.android.gms.location.Priority
 import com.saschl.cameragps.notification.NotificationsHelper
 import com.saschl.cameragps.utils.PreferencesManager
 import timber.log.Timber
-import java.nio.ByteBuffer
-import java.time.Instant
-import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.util.UUID
-import kotlin.experimental.and
 
+/**
+ * Constants for Sony camera Bluetooth communication
+ */
+object SonyBluetoothConstants {
+    // Service UUID of the sony cameras
+    val SERVICE_UUID: UUID = UUID.fromString("8000dd00-dd00-ffff-ffff-ffffffffffff")
+
+    // Characteristic for the location services
+    val CHARACTERISTIC_UUID: UUID = UUID.fromString("0000dd11-0000-1000-8000-00805f9b34fb")
+    val CHARACTERISTIC_READ_UUID: UUID = UUID.fromString("0000dd21-0000-1000-8000-00805f9b34fb")
+
+    // needed for some cameras to enable the functionality
+    val CHARACTERISTIC_ENABLE_UNLOCK_GPS_COMMAND: UUID = UUID.fromString("0000dd30-0000-1000-8000-00805f9b34fb")
+    val CHARACTERISTIC_ENABLE_LOCK_GPS_COMMAND: UUID = UUID.fromString("0000dd31-0000-1000-8000-00805f9b34fb")
+
+    const val ACTION_REQUEST_SHUTDOWN = "com.saschl.cameragps.ACTION_REQUEST_SHUTDOWN"
+
+    // GPS enable command bytes
+    val GPS_ENABLE_COMMAND = byteArrayOf(0x01)
+
+    // Location update interval
+    const val LOCATION_UPDATE_INTERVAL_MS = 5000L
+
+    // Accuracy threshold for location updates
+    const val ACCURACY_THRESHOLD_METERS = 200.0
+
+    // Time threshold for old location updates (5 minutes)
+    const val OLD_LOCATION_THRESHOLD_MS = 1000 * 60 * 5
+}
+
+
+/**
+ * Service responsible for sending GPS location data to Sony cameras via Bluetooth
+ */
 class LocationSenderService : Service() {
 
     private var address: String? = null
-    private var shouldSendTimeZoneAndDst: Boolean = true
+    private var locationDataConfig = LocationDataConfig(shouldSendTimeZoneAndDst = true)
     private val binder = LocalBinder()
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -50,39 +78,19 @@ class LocationSenderService : Service() {
     private var locationResult: Location = Location("")
     private var isShutdownRequested = false
 
-    private val handler = Handler(Looper.getMainLooper())
     private var pendingShutdownStartId: Int = 0
-
-    companion object {
-
-        // Service UUID of the sony cameras
-        val SERVICE_UUID: UUID = UUID.fromString("8000dd00-dd00-ffff-ffff-ffffffffffff")
-
-        // Characteristic for the location services
-        val CHARACTERISTIC_UUID: UUID = UUID.fromString("0000dd11-0000-1000-8000-00805f9b34fb")
-        val CHARACTERISTIC_READ_UUID: UUID = UUID.fromString("0000dd21-0000-1000-8000-00805f9b34fb")
-
-        // needed for some cameras to enable the functionality
-        val CHARACTERISTIC_ENABLE_GPS_COMMAND: UUID =
-            UUID.fromString("0000dd30-0000-1000-8000-00805f9b34fb")
-        val CHARACTERISTIC_ENABLED_GPS_COMMAND: UUID =
-            UUID.fromString("0000dd31-0000-1000-8000-00805f9b34fb")
-
-        const val ACTION_REQUEST_SHUTDOWN = "com.saschl.cameragps.ACTION_REQUEST_SHUTDOWN"
-
-    }
 
     private val bluetoothManager: BluetoothManager by lazy {
         applicationContext.getSystemService()!!
     }
 
+    private val bluetoothGattCallback = BluetoothGattCallbackHandler()
+
     inner class LocalBinder : Binder() {
         fun getService(): LocationSenderService = this@LocationSenderService
     }
 
-    override fun onBind(intent: Intent?): IBinder {
-        return binder
-    }
+    override fun onBind(intent: Intent?): IBinder = binder
 
     private fun hasTimeZoneDstFlag(value: ByteArray): Boolean {
         return value.size >= 5 && (value[4].toInt() and 0x02) != 0
@@ -99,7 +107,7 @@ class LocationSenderService : Service() {
         fusedLocationClient.requestLocationUpdates(
             LocationRequest.Builder(
                 Priority.PRIORITY_HIGH_ACCURACY,
-                5000,
+                SonyBluetoothConstants.LOCATION_UPDATE_INTERVAL_MS,
             ).build(), locationCallback, Looper.getMainLooper()
         )
     }
@@ -109,7 +117,7 @@ class LocationSenderService : Service() {
 
         val currentAddress = this.address
         // Check if this is a shutdown request
-        if (intent?.action == ACTION_REQUEST_SHUTDOWN) {
+        if (intent?.action == SonyBluetoothConstants.ACTION_REQUEST_SHUTDOWN) {
             if (currentAddress == null || !PreferencesManager.isKeepAliveEnabled(
                     this,
                     currentAddress
@@ -123,7 +131,7 @@ class LocationSenderService : Service() {
             cancelShutdown()
             startAsForegroundService()
 
-            this.pendingShutdownStartId = startId;
+            this.pendingShutdownStartId = startId
             address = intent?.getStringExtra("address")
 
             val device: BluetoothDevice = bluetoothManager.adapter.getRemoteDevice(address)
@@ -133,7 +141,7 @@ class LocationSenderService : Service() {
             } else {
                 Timber.i("Gatt will be created")
 
-                cameraGatt = device.connectGatt(this, true, callback)
+                cameraGatt = device.connectGatt(this, true, bluetoothGattCallback)
             }
         }
         return START_REDELIVER_INTENT
@@ -143,13 +151,12 @@ class LocationSenderService : Service() {
     override fun onDestroy() {
         super.onDestroy()
 
-        // Clean up shutdown timer
         cancelShutdown()
 
         cameraGatt?.close()
         cameraGatt = null
 
-        if (locationCallback != null) {
+        if (::locationCallback.isInitialized) {
             fusedLocationClient.removeLocationUpdates(locationCallback)
         }
         Timber.i("Destroyed service")
@@ -158,6 +165,16 @@ class LocationSenderService : Service() {
     @SuppressLint("MissingPermission")
     override fun onCreate() {
         super.onCreate()
+        initializeLogging()
+        initializeLocationServices()
+    }
+
+    private fun initializeLocationServices() {
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        locationCallback = LocationUpdateHandler()
+    }
+
+    private fun initializeLogging() {
         if (Timber.treeCount == 0) {
             FileTree.initialize(this)
             Timber.plant(Timber.DebugTree(), FileTree(this))
@@ -166,38 +183,41 @@ class LocationSenderService : Service() {
             val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
             Thread.setDefaultUncaughtExceptionHandler(GlobalExceptionHandler(defaultHandler))
         }
+    }
 
+    private inner class LocationUpdateHandler : LocationCallback() {
+        override fun onLocationResult(fetchedLocation: LocationResult) {
+            val lastLocation = fetchedLocation.lastLocation ?: return
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(fetchedLocation: LocationResult) {
-
-                // any location is better than none for now
-                val lastLocation = fetchedLocation.lastLocation
-                if (locationResult.provider.equals("") && lastLocation != null) {
-                    locationResult = lastLocation
-                    return
-                }
-
-                if (lastLocation != null) {
-                    // new location is way less accurate, only take if the old location is very old
-                    if ((lastLocation.accuracy - locationResult.accuracy) > 200) {
-                        Timber.w(
-                            "New location is way less accurate than the old one, will only update if the last location is older than 5 minutes"
-                        )
-                        if (lastLocation.time - locationResult.time > 1000 * 60 * 5) {
-                            Timber.d(
-                                "Last accurate location is older than 5 minutes, updating anyway"
-                            )
-                            locationResult = lastLocation
-                        }
-                    } else {
-                        locationResult = lastLocation
-                    }
-
-                }
+            if (shouldUpdateLocation(lastLocation)) {
+                locationResult = lastLocation
                 sendData(cameraGatt, writeLocationCharacteristic)
             }
+        }
+
+        private fun shouldUpdateLocation(newLocation: Location): Boolean {
+            // Any location is better than none initially
+            if (locationResult.provider?.isEmpty() == true) {
+                return true
+            }
+
+            val accuracyDifference = newLocation.accuracy - locationResult.accuracy
+
+            // If new location is significantly less accurate
+            if (accuracyDifference > SonyBluetoothConstants.ACCURACY_THRESHOLD_METERS) {
+                val timeDifference = newLocation.time - locationResult.time
+
+                Timber.w("New location is way less accurate than the old one, will only update if the last location is older than 5 minutes")
+
+                // Only update if the current location is very old
+                if (timeDifference > SonyBluetoothConstants.OLD_LOCATION_THRESHOLD_MS) {
+                    Timber.d("Last accurate location is older than 5 minutes, updating anyway")
+                    return true
+                }
+                return false
+            }
+
+            return true
         }
     }
 
@@ -215,7 +235,7 @@ class LocationSenderService : Service() {
         )
     }
 
-    private val callback = object : BluetoothGattCallback() {
+    private inner class BluetoothGattCallbackHandler : BluetoothGattCallback() {
         @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(
             gatt: BluetoothGatt,
@@ -238,38 +258,24 @@ class LocationSenderService : Service() {
         @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             super.onServicesDiscovered(gatt, status)
-            //      state = state.copy(services = gatt.services)
-            //     currentOnStateChange(state)
-            val service = gatt.services?.find { it.uuid == SERVICE_UUID }
+            val service = gatt.services?.find { it.uuid == SonyBluetoothConstants.SERVICE_UUID }
 
-            // If the GATTServerSample service is found, get the characteristic
-            writeLocationCharacteristic = service?.getCharacteristic(CHARACTERISTIC_UUID)
+            // If the Sony camera service is found, get the characteristics
+            writeLocationCharacteristic = service?.getCharacteristic(SonyBluetoothConstants.CHARACTERISTIC_UUID)
 
             // TODO reenable reading characteristic for DST and timezone support
-            val readCharacteristic = service?.getCharacteristic(CHARACTERISTIC_READ_UUID)
+            val readCharacteristic = service?.getCharacteristic(SonyBluetoothConstants.CHARACTERISTIC_READ_UUID)
 
-            //enable GPS if needed
-            val gpsEnableCharacteristic =
-                service?.getCharacteristic(CHARACTERISTIC_ENABLE_GPS_COMMAND)
+            // Enable GPS if needed
+            val gpsEnableCharacteristic = service?.getCharacteristic(SonyBluetoothConstants.CHARACTERISTIC_ENABLE_UNLOCK_GPS_COMMAND)
+
             if (gpsEnableCharacteristic != null) {
-
                 Timber.i("Enabling GPS characteristic: ${gpsEnableCharacteristic.uuid}")
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    gatt.writeCharacteristic(
-                        gpsEnableCharacteristic,
-                        byteArrayOf(0x01),
-                        BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                    )
-                } else {
-                    gpsEnableCharacteristic.value = byteArrayOf(0x01)
-                    gatt.writeCharacteristic(gpsEnableCharacteristic)
-                }
+                BluetoothGattUtils.writeCharacteristic(gatt, gpsEnableCharacteristic, SonyBluetoothConstants.GPS_ENABLE_COMMAND)
             } else {
-
-                // characteristic to enable gps does not exist, starting transmission
+                // Characteristic to enable GPS does not exist, starting transmission directly
                 startLocationTransmission()
             }
-            //gatt.readCharacteristic(readCharacteristic)
         }
 
         @SuppressLint("MissingPermission")
@@ -280,30 +286,29 @@ class LocationSenderService : Service() {
         ) {
             super.onCharacteristicWrite(gatt, writtenCharacteristic, status)
 
-            // The gps command has been unlocked, now lock it for us
-            if (writtenCharacteristic?.uuid == CHARACTERISTIC_ENABLE_GPS_COMMAND) {
-                val lockCharacteristic = gatt.services.flatMap { s -> s.characteristics }
-                    .find { it.uuid == CHARACTERISTIC_ENABLED_GPS_COMMAND }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-
-                    lockCharacteristic?.let {
-                        Timber.i("Found characteristic to lock GPS: ${it.uuid}")
-                        gatt.writeCharacteristic(
-                            it,
-                            byteArrayOf(0x01),
-                            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                        )
-                    }
-                } else {
-                    lockCharacteristic?.value = byteArrayOf(0x01)
-                    gatt.writeCharacteristic(lockCharacteristic)
+            when (writtenCharacteristic?.uuid) {
+                SonyBluetoothConstants.CHARACTERISTIC_ENABLE_UNLOCK_GPS_COMMAND -> {
+                    handleGpsEnableResponse(gatt)
                 }
-            } else if (writtenCharacteristic?.uuid == CHARACTERISTIC_ENABLED_GPS_COMMAND) {
-                Timber.i("GPS flag enabled on device, will now send data")
-                startLocationTransmission()
+                SonyBluetoothConstants.CHARACTERISTIC_ENABLE_LOCK_GPS_COMMAND -> {
+                    Timber.i("GPS flag enabled on device, will now send data")
+                    startLocationTransmission()
+                }
             }
+
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 Timber.e("Error writing characteristic: $status")
+            }
+        }
+
+        @SuppressLint("MissingPermission")
+        private fun handleGpsEnableResponse(gatt: BluetoothGatt) {
+            // The GPS command has been unlocked, now lock it for us
+            val lockCharacteristic = BluetoothGattUtils.findCharacteristic(gatt, SonyBluetoothConstants.CHARACTERISTIC_ENABLE_LOCK_GPS_COMMAND)
+
+            lockCharacteristic?.let {
+                Timber.i("Found characteristic to lock GPS: ${it.uuid}")
+                BluetoothGattUtils.writeCharacteristic(gatt, it, SonyBluetoothConstants.GPS_ENABLE_COMMAND)
             }
         }
 
@@ -330,8 +335,8 @@ class LocationSenderService : Service() {
         }
 
         private fun doOnRead(value: ByteArray) {
-            shouldSendTimeZoneAndDst = hasTimeZoneDstFlag(value)
-            Timber.i("Characteristic read, shouldSendTimeZoneAndDst: $shouldSendTimeZoneAndDst")
+            locationDataConfig = locationDataConfig.copy(shouldSendTimeZoneAndDst = hasTimeZoneDstFlag(value))
+            Timber.i("Characteristic read, shouldSendTimeZoneAndDst: ${locationDataConfig.shouldSendTimeZoneAndDst}")
         }
     }
 
@@ -340,92 +345,27 @@ class LocationSenderService : Service() {
         gatt: BluetoothGatt?,
         characteristic: BluetoothGattCharacteristic?,
     ) {
-        val timeZoneId = ZoneId.systemDefault()
-
-        val paddingBytes = ByteArray(65)
-        val fixedBytes = byteArrayOf(
-            0x00,
-            if (shouldSendTimeZoneAndDst) 0x5D else 0x59,
-            0x08,
-            0x02,
-            0xFC.toByte(),
-            if (shouldSendTimeZoneAndDst) 0x03 else 0x00,
-            0x00,
-            0x00,
-            0x10,
-            0x10,
-            0x10
-        )
-
-        // taken from https://github.com/mlapaglia/AlphaSync/blob/main/app/src/main/java/com.alphasync/sonycommand/SonyCommandGenerator.kt
-        val locationBytes = getConvertedCoordinates(locationResult)
-        val dateBytes = getConvertedDate()
-        val timeZoneOffsetBytes = getConvertedTimeZoneOffset(timeZoneId)
-        val dstOffsetBytes = getConvertedDstOffset(timeZoneId)
-
-        var data: ByteArray
-
-        if (shouldSendTimeZoneAndDst) {
-            data = ByteArray(95)
-        } else {
-            data = ByteArray(91)
+        if (gatt == null || characteristic == null) {
+            Timber.w("Cannot send data: GATT or characteristic is null")
+            return
         }
-        var currentBytePosition = 0
 
-        System.arraycopy(fixedBytes, 0, data, currentBytePosition, fixedBytes.size)
-        currentBytePosition += fixedBytes.size
-        System.arraycopy(locationBytes, 0, data, currentBytePosition, locationBytes.size)
-        currentBytePosition += locationBytes.size
-        System.arraycopy(dateBytes, 0, data, currentBytePosition, dateBytes.size)
-        currentBytePosition += dateBytes.size
-        System.arraycopy(paddingBytes, 0, data, currentBytePosition, paddingBytes.size)
-        if (shouldSendTimeZoneAndDst) {
-            currentBytePosition += paddingBytes.size
-            System.arraycopy(
-                timeZoneOffsetBytes,
-                0,
-                data,
-                currentBytePosition,
-                timeZoneOffsetBytes.size
-            )
-            currentBytePosition += timeZoneOffsetBytes.size
-            System.arraycopy(dstOffsetBytes, 0, data, currentBytePosition, dstOffsetBytes.size)
-        }
-        //val hex = data.toHex()
+        val locationPacket = LocationDataConverter.buildLocationDataPacket(locationDataConfig, locationResult)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (characteristic != null) {
-                val result = gatt?.writeCharacteristic(
-                    characteristic,
-                    data,
-                    BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT,
-                )
-                if (result != 0) {
-                    Timber.e("Writing characteristic failed. Result: $result")
-                }
-            }
-        } else {
-            if (characteristic != null) {
-                characteristic.value = data
-                val result = gatt?.writeCharacteristic(characteristic)
-                if (result != null && !result) {
-                    Timber.e("Writing characteristic failed. Result: $result")
-                }
-            }
+        if (!BluetoothGattUtils.writeCharacteristic(gatt, characteristic, locationPacket)) {
+            Timber.e("Failed to send location data to camera")
         }
     }
 
+
     @SuppressLint("MissingPermission")
     fun requestShutdown(startId: Int) {
-
-        val startId = startId
         if (isShutdownRequested) {
             Timber.i("Shutdown already requested, ignoring duplicate request")
             return
         }
 
         isShutdownRequested = true
-
         stopSelfResult(startId)
     }
 
@@ -439,49 +379,3 @@ class LocationSenderService : Service() {
         }
     }
 }
-
-private fun getConvertedDstOffset(timezoneId: ZoneId): ByteArray {
-    if (!timezoneId.rules.isDaylightSavings(Instant.now())) {
-        return byteArrayOf(0, 0) // No DST offset
-    }
-    val offsetDstMin = timezoneId.rules.getDaylightSavings(Instant.now()).toMinutes().toInt()
-    return offsetDstMin.toShort().toByteArray()
-}
-
-private fun getConvertedTimeZoneOffset(timezoneId: ZoneId): ByteArray {
-    val dt = LocalDateTime.now()
-    val offsetMin = timezoneId.rules.getOffset(dt).totalSeconds / 60
-    return offsetMin.toShort().toByteArray()
-}
-
-private fun Short.toByteArray(): ByteArray {
-    return byteArrayOf((this.toInt() shr 8).toByte(), this.toByte())
-}
-
-
-private fun getConvertedCoordinates(location: Location): ByteArray {
-    val latitude = (location.latitude * 10000000).toInt()
-    val latitudeBytes = ByteBuffer.allocate(Int.SIZE_BYTES).putInt(latitude).array()
-
-    val longitude = (location.longitude * 10000000).toInt()
-    val longitudeBytes = ByteBuffer.allocate(Int.SIZE_BYTES).putInt(longitude).array()
-
-    return latitudeBytes + longitudeBytes
-}
-
-private fun getConvertedDate(): ByteArray {
-    val currentDateTime = ZonedDateTime.ofInstant(Instant.now(), ZoneId.of("UTC"))
-    val yearBytes = currentDateTime.year.toShort().toByteArray()
-
-    return byteArrayOf(
-        yearBytes[0],
-        yearBytes[1],
-        currentDateTime.monthValue.toByte(),
-        currentDateTime.dayOfMonth.toByte(),
-        currentDateTime.hour.toByte(),
-        currentDateTime.minute.toByte(),
-        currentDateTime.second.toByte()
-    )
-}
-
-fun ByteArray.toHex(): String = joinToString(separator = "") { eachByte -> "%02x".format(eachByte) }
