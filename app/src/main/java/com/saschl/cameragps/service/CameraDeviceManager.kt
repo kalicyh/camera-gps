@@ -427,7 +427,7 @@ private fun ScanForDevicesMenu(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.primaryContainer)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -440,7 +440,7 @@ private fun ScanForDevicesMenu(
                 text = stringResource(R.string.scan_for_devices),
             )
             Button(
-                modifier = Modifier.weight(0.7f),
+                modifier = Modifier.weight(0.5f),
                 enabled = associatedDevices.isEmpty(),
                 onClick = {
                     scope.launch {
