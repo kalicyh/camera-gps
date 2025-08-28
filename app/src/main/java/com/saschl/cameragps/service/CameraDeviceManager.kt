@@ -28,7 +28,9 @@ import android.companion.CompanionDeviceManager
 import android.companion.ObservingDevicePresenceRequest
 import android.content.Intent
 import android.content.IntentSender
+import android.location.LocationManager
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -49,6 +51,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -103,6 +106,7 @@ fun CameraDeviceManager(
     val scope = rememberCoroutineScope()
     val deviceManager = context.getSystemService<CompanionDeviceManager>()
     val adapter = context.getSystemService<BluetoothManager>()?.adapter
+    val locationManager = context.getSystemService<LocationManager>()
     var selectedDevice by remember {
         mutableStateOf<AssociatedDeviceCompat?>(null)
     }
@@ -114,6 +118,15 @@ fun CameraDeviceManager(
     var associatedDevices by remember {
         // If we already associated the device no need to do it again.
         mutableStateOf(deviceManager!!.getAssociatedDevices(adapter!!))
+    }
+
+    var isBluetoothEnabled by remember {
+        mutableStateOf(adapter?.isEnabled == true)
+    }
+
+    var isLocationEnabled by remember {
+        mutableStateOf(locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true ||
+                      locationManager?.isProviderEnabled(LocationManager.NETWORK_PROVIDER) == true)
     }
 
 
@@ -128,6 +141,9 @@ fun CameraDeviceManager(
             Lifecycle.State.STARTED -> {}
             Lifecycle.State.RESUMED -> {
                 associatedDevices = deviceManager!!.getAssociatedDevices(adapter!!)
+                isBluetoothEnabled = adapter.isEnabled == true
+                isLocationEnabled = locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true ||
+                                  locationManager?.isProviderEnabled(LocationManager.NETWORK_PROVIDER) == true
             }
         }
     }
@@ -140,6 +156,8 @@ fun CameraDeviceManager(
             EnhancedLocationPermissionBox {
                 DevicesScreen(
                     deviceManager,
+                    isBluetoothEnabled,
+                    isLocationEnabled,
                     onDeviceAssociated = {
                         scope.launch {
                             delay(1000) // give the system a short time to breathe
@@ -204,6 +222,8 @@ fun CameraDeviceManager(
 @Composable
 private fun DevicesScreen(
     deviceManager: CompanionDeviceManager,
+    isBluetoothEnabled: Boolean,
+    isLocationEnabled: Boolean,
     associatedDevices: List<AssociatedDeviceCompat>,
     onDeviceAssociated: (AssociatedDeviceCompat) -> Unit,
     onConnect: (AssociatedDeviceCompat) -> Unit,
@@ -279,6 +299,8 @@ private fun DevicesScreen(
 
             ScanForDevicesMenu(
                 deviceManager,
+                isBluetoothEnabled,
+                isLocationEnabled,
                 associatedDevices,
                 onSetPairingDevice = { device -> pendingPairingDevice = device })
             {
@@ -354,6 +376,8 @@ private fun DevicesScreen(
 @Composable
 private fun ScanForDevicesMenu(
     deviceManager: CompanionDeviceManager,
+    isBluetoothEnabled: Boolean,
+    isLocationEnabled: Boolean,
     associatedDevices: List<AssociatedDeviceCompat>,
     onSetPairingDevice: (AssociatedDeviceCompat) -> Unit,
     onDeviceAssociated: (AssociatedDeviceCompat) -> Unit,
@@ -432,6 +456,104 @@ private fun ScanForDevicesMenu(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // Bluetooth warning card
+        if (!isBluetoothEnabled) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Text(
+                            text = "Bluetooth is disabled",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    Text(
+                        text = "Please enable Bluetooth to scan for devices.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Button(
+                        onClick = {
+                            context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Open Bluetooth Settings")
+                    }
+                }
+            }
+        }
+
+        // Location services warning card
+        if (!isLocationEnabled) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Text(
+                            text = "Location services are disabled",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    Text(
+                        text = "Please enable location services for GPS functionality.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Button(
+                        onClick = {
+                            context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Open Location Settings")
+                    }
+                }
+            }
+        }
+
         Row {
             Text(
                 modifier = Modifier
@@ -441,7 +563,7 @@ private fun ScanForDevicesMenu(
             )
             Button(
                 modifier = Modifier.weight(0.5f),
-                enabled = associatedDevices.isEmpty(),
+                enabled = associatedDevices.isEmpty() && isBluetoothEnabled && isLocationEnabled,
                 onClick = {
                     scope.launch {
                         val intentSender =
@@ -524,7 +646,7 @@ private fun AssociatedDevicesList(
             items(associatedDevices) { device ->
                 val isPaired = try {
                     adapter?.let { isDevicePaired(it, device.address) } ?: false
-                } catch (e: SecurityException) {
+                } catch (_: SecurityException) {
                     false
                 }
 
@@ -606,6 +728,7 @@ private fun AssociatedDevicesList(
     }
 }
 
+@SuppressLint("MissingPermission")
 private fun Intent.getAssociationResult(): AssociatedDeviceCompat? {
     var result: AssociatedDeviceCompat? = null
 
@@ -631,7 +754,7 @@ private fun Intent.getAssociationResult(): AssociatedDeviceCompat? {
                     device = scanResult,
                 )
             }
-        } catch (ex: ClassCastException) {
+        } catch (_: ClassCastException) {
             // Not a BLE device
             Timber.e( "API level is below 33 but it is not a BluetoothDevice. Trying with scanresult")
             val scanResult = getParcelableExtra<ScanResult>(CompanionDeviceManager.EXTRA_DEVICE)
