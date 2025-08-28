@@ -1,69 +1,13 @@
-/*
- * Copyright 2023 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.saschl.cameragps.service
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
-import android.bluetooth.le.ScanFilter
-import android.bluetooth.le.ScanResult
-import android.companion.AssociationInfo
-import android.companion.AssociationRequest
-import android.companion.BluetoothLeDeviceFilter
 import android.companion.CompanionDeviceManager
 import android.companion.ObservingDevicePresenceRequest
 import android.content.Intent
-import android.content.IntentSender
 import android.location.LocationManager
 import android.os.Build
-import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -72,36 +16,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.core.content.getSystemService
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.saschl.cameragps.R
-import com.saschl.cameragps.service.pairing.PairingManager
-import com.saschl.cameragps.service.pairing.isDevicePaired
 import com.saschl.cameragps.service.pairing.startDevicePresenceObservation
+import com.saschl.cameragps.ui.DevicesScreen
 import com.saschl.cameragps.ui.EnhancedLocationPermissionBox
-import com.saschl.cameragps.ui.LogViewerActivity
 import com.saschl.cameragps.utils.PreferencesManager
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.concurrent.Executor
 
 @SuppressLint("MissingPermission")
 @Composable
 fun CameraDeviceManager(
     onSettingsClick: () -> Unit = {}
 ) {
-
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val deviceManager = context.getSystemService<CompanionDeviceManager>()
@@ -114,9 +45,7 @@ fun CameraDeviceManager(
     val lifecycleOwner = LocalLifecycleOwner.current
     val lifecycleState by lifecycleOwner.lifecycle.currentStateFlow.collectAsState()
 
-
     var associatedDevices by remember {
-        // If we already associated the device no need to do it again.
         mutableStateOf(deviceManager!!.getAssociatedDevices(adapter!!))
     }
 
@@ -129,25 +58,18 @@ fun CameraDeviceManager(
                       locationManager?.isProviderEnabled(LocationManager.NETWORK_PROVIDER) == true)
     }
 
-
     LaunchedEffect(lifecycleState) {
-        // Do something with your state
-        // You may want to use DisposableEffect or other alternatives
-        // instead of LaunchedEffect
         when (lifecycleState) {
-            Lifecycle.State.DESTROYED -> {}
-            Lifecycle.State.INITIALIZED -> {}
-            Lifecycle.State.CREATED -> {}
-            Lifecycle.State.STARTED -> {}
             Lifecycle.State.RESUMED -> {
                 associatedDevices = deviceManager!!.getAssociatedDevices(adapter!!)
                 isBluetoothEnabled = adapter.isEnabled == true
                 isLocationEnabled = locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true ||
                                   locationManager?.isProviderEnabled(LocationManager.NETWORK_PROVIDER) == true
             }
+            else -> { /* No action needed */
+            }
         }
     }
-
 
     if (deviceManager == null || adapter == null) {
         Text(text = "No Companion device manager found. The device does not support it.")
@@ -155,669 +77,69 @@ fun CameraDeviceManager(
         if (selectedDevice == null) {
             EnhancedLocationPermissionBox {
                 DevicesScreen(
-                    deviceManager,
-                    isBluetoothEnabled,
-                    isLocationEnabled,
+                    deviceManager = deviceManager,
+                    isBluetoothEnabled = isBluetoothEnabled,
+                    isLocationEnabled = isLocationEnabled,
+                    associatedDevices = associatedDevices,
                     onDeviceAssociated = {
                         scope.launch {
                             delay(1000) // give the system a short time to breathe
                             startDevicePresenceObservation(deviceManager, it)
-                            //associatedDevices = associatedDevices + it
                         }
-
                     },
                     onConnect = { device ->
-                        selectedDevice =
-                            (device)
-
+                        selectedDevice = device
                     },
-                    associatedDevices = associatedDevices,
                     onSettingsClick = onSettingsClick
                 )
             }
         } else {
             EnhancedLocationPermissionBox {
-                DeviceDetailScreen(device = selectedDevice!!, deviceManager, onDisassociate = {
-                    associatedDevices.find { ass -> ass.address == it.address }?.let { it ->
-                        Timber.i("Disassociating device: ${it.name} (${it.address})")
-                        scope.launch {
-
-                            PreferencesManager.setKeepAliveEnabled(context, it.address, false)
-
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                                deviceManager.stopObservingDevicePresence(
-                                    ObservingDevicePresenceRequest.Builder().setAssociationId(it.id)
-                                        .build()
-                                )
-
-                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                @Suppress("DEPRECATION")
-                                deviceManager.stopObservingDevicePresence(it.address)
-                            }
-
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                deviceManager.disassociate(it.id)
-                            } else {
-                                @Suppress("DEPRECATION")
-                                deviceManager.disassociate(it.address)
-                            }
-                            val serviceIntent = Intent(
-                                context.applicationContext,
-                                LocationSenderService::class.java
-                            )
-                            context.stopService(serviceIntent)
-
-                            associatedDevices = deviceManager.getAssociatedDevices(adapter)
-                        }
-                        selectedDevice = null
-                    }
-                }, onClose = { selectedDevice = null })
-
-            }
-        }
-    }
-}
-@OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("MissingPermission")
-@Composable
-private fun DevicesScreen(
-    deviceManager: CompanionDeviceManager,
-    isBluetoothEnabled: Boolean,
-    isLocationEnabled: Boolean,
-    associatedDevices: List<AssociatedDeviceCompat>,
-    onDeviceAssociated: (AssociatedDeviceCompat) -> Unit,
-    onConnect: (AssociatedDeviceCompat) -> Unit,
-    onSettingsClick: () -> Unit = {}
-) {
-    val context = LocalContext.current
-
-    // State for managing pairing after association
-    var pendingPairingDevice by remember { mutableStateOf<AssociatedDeviceCompat?>(null) }
-
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.app_name_ui),
-                        //  style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-
-                actions = {
-                    IconButton(
-                        onClick = {
-                            context.startActivity(
-                                Intent(context, com.saschl.cameragps.ui.HelpActivity::class.java)
-                            )
-                        }
-                    ) {
-                        Icon(
-                            Icons.Default.Info,
-                            contentDescription = stringResource(R.string.help_menu_item),
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    IconButton(
-                        onClick = {
-                            context.startActivity(
-                                Intent(context, LogViewerActivity::class.java)
-                            )
-                        }
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.baseline_view_list_24),
-                            contentDescription = "View Logs",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    IconButton(onClick = { onSettingsClick() }) {
-                        Icon(
-                            Icons.Default.Settings,
-                            contentDescription = "Settings",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                )
-            )
-        }
-    ) { innerPadding ->
-
-
-        Column(
-            modifier = Modifier
-                .padding(innerPadding),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-
-            ) {
-
-            ScanForDevicesMenu(
-                deviceManager,
-                isBluetoothEnabled,
-                isLocationEnabled,
-                associatedDevices,
-                onSetPairingDevice = { device -> pendingPairingDevice = device })
-            {
-                onDeviceAssociated(it)
-                //  BlePresenceScanner.start(context)
-                //startDevicePresenceObservation(deviceManager, it)
-                //  startForegroundService(context, serviceIntent)
-
-            }
-
-            // Single device limitation hint
-            if(associatedDevices.size >= 1 ) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.Info,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = stringResource(R.string.single_device_limitation_hint),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            AssociatedDevicesList(
-                associatedDevices = associatedDevices,
-                onConnect = onConnect
-            )
-            // Handle pairing for newly associated device
-            pendingPairingDevice?.let { device ->
-                PairingManager(
-                    device = device,
+                DeviceDetailScreen(
+                    device = selectedDevice!!,
                     deviceManager = deviceManager,
-                    onPairingComplete = {
-                        Timber.i("Pairing completed for newly associated device ${device.name}")
-                        onDeviceAssociated(device)
-                        pendingPairingDevice = null
+                    onDisassociate = { device ->
+                        associatedDevices.find { ass -> ass.address == device.address }
+                            ?.let { foundDevice ->
+                                Timber.i("Disassociating device: ${foundDevice.name} (${foundDevice.address})")
+                                scope.launch {
+                                    PreferencesManager.setKeepAliveEnabled(
+                                        context,
+                                        foundDevice.address,
+                                        false
+                                    )
 
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                                        deviceManager.stopObservingDevicePresence(
+                                            ObservingDevicePresenceRequest.Builder()
+                                                .setAssociationId(foundDevice.id).build()
+                                        )
+                                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                        @Suppress("DEPRECATION")
+                                        deviceManager.stopObservingDevicePresence(foundDevice.address)
+                                    }
+
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                        deviceManager.disassociate(foundDevice.id)
+                                    } else {
+                                        @Suppress("DEPRECATION")
+                                        deviceManager.disassociate(foundDevice.address)
+                                    }
+
+                                    val serviceIntent = Intent(
+                                        context.applicationContext,
+                                        LocationSenderService::class.java
+                                    )
+                                    context.stopService(serviceIntent)
+
+                                    associatedDevices = deviceManager.getAssociatedDevices(adapter)
+                                }
+                                selectedDevice = null
+                            }
                     },
-                    onPairingCancelled = {
-                        Timber.i("Pairing cancelled for newly associated device ${device.name}")
-                        // Still add the device even if pairing was cancelled
-                        onDeviceAssociated(device)
-                        pendingPairingDevice = null
-                    }
+                    onClose = { selectedDevice = null }
                 )
             }
         }
     }
-}
-
-@SuppressLint("MissingPermission")
-@Suppress("DEPRECATION")
-@Composable
-private fun ScanForDevicesMenu(
-    deviceManager: CompanionDeviceManager,
-    isBluetoothEnabled: Boolean,
-    isLocationEnabled: Boolean,
-    associatedDevices: List<AssociatedDeviceCompat>,
-    onSetPairingDevice: (AssociatedDeviceCompat) -> Unit,
-    onDeviceAssociated: (AssociatedDeviceCompat) -> Unit,
-) {
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    var errorMessage by remember {
-        mutableStateOf("")
-    }
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartIntentSenderForResult(),
-    ) {
-        when (it.resultCode) {
-            CompanionDeviceManager.RESULT_OK -> {
-                it.data?.getAssociationResult()?.run {
-
-                    // Device association successful, now check if pairing is needed
-                    val bluetoothManager = context.getSystemService<BluetoothManager>()
-                    val adapter = bluetoothManager?.adapter
-
-                    if (associatedDevices.any { it -> it.address == this.address }) {
-                        Timber.i("Device ${this.name} already associated, skipping pairing")
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            deviceManager.disassociate(this.id)
-                            errorMessage = "The device is already associated."
-                        } else {
-                            // Android 12 can only disassociate by address, but that will probably also delete the existing association
-                            @Suppress("DEPRECATION")
-                            deviceManager.disassociate(this.address)
-                            errorMessage =
-                                "The device was already associated. The association was removed to prevent duplicates. Please try again."
-                        }
-                        return@run
-                    }
-                    if (!isDevicePaired(adapter, this.address)) {
-                        Timber.i("Device ${this.name} associated but not paired, initiating pairing")
-                        onSetPairingDevice(this)
-                    } else {
-                        Timber.i("Device ${this.name} already paired, completing association")
-                        onDeviceAssociated(this)
-                    }
-                    errorMessage = ""
-                }
-            }
-
-            CompanionDeviceManager.RESULT_CANCELED -> {
-                errorMessage = context.getString(R.string.the_request_was_canceled)
-            }
-
-            CompanionDeviceManager.RESULT_INTERNAL_ERROR -> {
-                errorMessage = context.getString(R.string.internal_error_happened)
-            }
-
-            CompanionDeviceManager.RESULT_DISCOVERY_TIMEOUT -> {
-                errorMessage =
-                    context.getString(R.string.no_device_matching_the_given_filter_were_found)
-            }
-
-            CompanionDeviceManager.RESULT_USER_REJECTED -> {
-                errorMessage = context.getString(R.string.the_user_explicitly_declined_the_request)
-            }
-
-            else -> {
-                errorMessage = context.getString(R.string.unknown_error)
-            }
-        }
-    }
-
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        // Bluetooth warning card
-        if (!isBluetoothEnabled) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Text(
-                            text = "Bluetooth is disabled",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                    Text(
-                        text = "Please enable Bluetooth to scan for devices.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                    Button(
-                        onClick = {
-                            context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Open Bluetooth Settings")
-                    }
-                }
-            }
-        }
-
-        // Location services warning card
-        if (!isLocationEnabled) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Text(
-                            text = "Location services are disabled",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                    Text(
-                        text = "Please enable location services for GPS functionality.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                    Button(
-                        onClick = {
-                            context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Open Location Settings")
-                    }
-                }
-            }
-        }
-
-        Row {
-            Text(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                text = stringResource(R.string.scan_for_devices),
-            )
-            Button(
-                modifier = Modifier.weight(0.5f),
-                enabled = associatedDevices.isEmpty() && isBluetoothEnabled && isLocationEnabled,
-                onClick = {
-                    scope.launch {
-                        val intentSender =
-                            requestDeviceAssociation(deviceManager)
-                        launcher.launch(IntentSenderRequest.Builder(intentSender).build())
-                    }
-                },
-            ) {
-                Text(text = "Start", maxLines = 1)
-            }
-        }
-        if (errorMessage.isNotBlank()) {
-            Text(text = errorMessage, color = MaterialTheme.colorScheme.error)
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun AssociatedDevicesList(
-    associatedDevices: List<AssociatedDeviceCompat>,
-    onConnect: (AssociatedDeviceCompat) -> Unit,
-) {
-
-    val context = LocalContext.current
-    val bluetoothManager = context.getSystemService<BluetoothManager>()
-    val adapter = bluetoothManager?.adapter
-
-    Column {
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            stickyHeader {
-                Text(
-                    text = stringResource(R.string.associated_devices),
-                    modifier = Modifier.padding(8.dp),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
-
-            if (associatedDevices.isEmpty()) {
-                item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.baseline_photo_camera_24),
-                                contentDescription = null,
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = stringResource(R.string.no_devices_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = stringResource(R.string.no_devices_message),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                }
-            }
-
-            items(associatedDevices) { device ->
-                val isPaired = try {
-                    adapter?.let { isDevicePaired(it, device.address) } ?: false
-                } catch (_: SecurityException) {
-                    false
-                }
-
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp)
-                        .clickable(
-                            true,
-                            onClick = {
-                                /* if (isPaired) onConnect(device) else onSetPendingPairingDevice(
-                                     device
-                                 )*/
-                                onConnect(device)
-                            }),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-
-                    ) {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .weight(0.2f),
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.baseline_photo_camera_24),
-                            contentDescription = "Device Icon"
-                        )
-                    }
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                    ) {
-                        Text(
-                            fontWeight = FontWeight.Bold,
-                            text =  device.name
-                        )
-
-                        if (!isPaired) {
-                            Text(
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall,
-                                text = context.getString(R.string.not_paired_tap_to_pair_again),
-                            )
-                        }
-                        if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.S
-                            && !PreferencesManager.isKeepAliveEnabled(context, device.address)) {
-                            Text(
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall,
-                                text = context.getString(R.string.android_12_requires_keep_alive),
-                            )
-                        }
-                    }
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .weight(0.8f),
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "Show details"
-                        )
-
-                    }
-
-                }
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(top = 2.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
-        }
-    }
-}
-
-@SuppressLint("MissingPermission")
-private fun Intent.getAssociationResult(): AssociatedDeviceCompat? {
-    var result: AssociatedDeviceCompat? = null
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        result = getParcelableExtra(
-            CompanionDeviceManager.EXTRA_ASSOCIATION,
-            AssociationInfo::class.java,
-        )?.toAssociatedDevice()
-    } else {
-        // Below Android 33 the result returns either a BLE ScanResult, a
-        // Classic BluetoothDevice or a Wifi ScanResult
-        // In our case we are looking for our BLE GATT server so we can cast directly
-        // to the BLE ScanResult
-        // FIXME for some reason it does return a BluetoothDevice so we need to handle that
-        @Suppress("DEPRECATION")
-        try {
-            val scanResult = getParcelableExtra<BluetoothDevice>(CompanionDeviceManager.EXTRA_DEVICE)
-            if (scanResult != null) {
-                result = AssociatedDeviceCompat(
-                    id = -1, //no id
-                    address = scanResult.address ?: "N/A",
-                    name = scanResult.name ?: "N/A",
-                    device = scanResult,
-                )
-            }
-        } catch (_: ClassCastException) {
-            // Not a BLE device
-            Timber.e( "API level is below 33 but it is not a BluetoothDevice. Trying with scanresult")
-            val scanResult = getParcelableExtra<ScanResult>(CompanionDeviceManager.EXTRA_DEVICE)
-            result = scanResult?.let {
-                AssociatedDeviceCompat(
-                    id = it.advertisingSid, //no id
-                    address = it.device.address ?: "N/A",
-                    name = it.device.name ?: "N/A",
-                    device = it.device,
-                )
-            }
-        }
-
-    }
-    return result
-
-}
-
-private suspend fun requestDeviceAssociation(
-    deviceManager: CompanionDeviceManager
-): IntentSender {
-
-    val deviceFilter = BluetoothLeDeviceFilter.Builder()
-        .setScanFilter(ScanFilter.Builder().setManufacturerData(0x012D, byteArrayOf()).build())
-        .build()
-
-    val pairingRequest: AssociationRequest = AssociationRequest.Builder()
-        .addDeviceFilter(deviceFilter)
-        .build()
-
-    val result = CompletableDeferred<IntentSender>()
-
-    val callback = object : CompanionDeviceManager.Callback() {
-        override fun onAssociationPending(intentSender: IntentSender) {
-            Timber.i("Association pending")
-            result.complete(intentSender)
-        }
-
-        override fun onAssociationCreated(associationInfo: AssociationInfo) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                Timber.i("Association created: ${associationInfo.displayName} (${associationInfo.id})")
-            }
-        }
-
-        override fun onFailure(errorMessage: CharSequence?) {
-            result.completeExceptionally(IllegalStateException(errorMessage?.toString().orEmpty()))
-        }
-
-        override fun onDeviceFound(intentSender: IntentSender) {
-            if(Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-                Timber.i("Device found")
-                // On Android < 12 we get the device found callback instead of association pending
-                result.complete(intentSender)
-            }
-        }
-    }
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        val executor = Executor { it.run() }
-        deviceManager.associate(pairingRequest, executor, callback)
-    } else {
-        deviceManager.associate(pairingRequest, callback, null)
-    }
-
-    return result.await()
 }

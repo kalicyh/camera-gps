@@ -52,7 +52,7 @@ import timber.log.Timber
 @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
 fun DeviceDetailScreen(
     device: AssociatedDeviceCompat,
-    deviceManger: CompanionDeviceManager,
+    deviceManager: CompanionDeviceManager,
     onDisassociate: (device: AssociatedDeviceCompat) -> Unit,
     onClose: () -> Unit
 ) {
@@ -179,12 +179,12 @@ fun DeviceDetailScreen(
                             if(!enabled) {
 
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                    deviceManger.stopObservingDevicePresence(device.address)
+                                    deviceManager.stopObservingDevicePresence(device.address)
                                 }
                                 Timber.i("Stopping LocationSenderService from detail for device ${device.address}")
                                 context.stopService(Intent(context.applicationContext, LocationSenderService::class.java))
                             } else {
-                                startDevicePresenceObservation(deviceManger, device)
+                                startDevicePresenceObservation(deviceManager, device)
                             }
                         }
                     )
@@ -209,14 +209,14 @@ fun DeviceDetailScreen(
                             intent.putExtra("address", device.address.uppercase())
                             if (enabled) {
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                    deviceManger.stopObservingDevicePresence(device.address)
+                                    deviceManager.stopObservingDevicePresence(device.address)
                                 }
 
                                 context.startForegroundService(intent)
                             } else {
                                 Timber.i("Stopping LocationSenderService from detail for device ${device.address}")
                                 context.stopService(intent)
-                                startDevicePresenceObservation(deviceManger, device)
+                                startDevicePresenceObservation(deviceManager, device)
                             }
                         }
                     )
