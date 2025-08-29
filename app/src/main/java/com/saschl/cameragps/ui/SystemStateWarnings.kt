@@ -19,8 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.saschl.cameragps.R
 
 @Composable
 fun BluetoothWarningCard() {
@@ -50,14 +52,14 @@ fun BluetoothWarningCard() {
                     tint = MaterialTheme.colorScheme.onErrorContainer
                 )
                 Text(
-                    text = "Bluetooth is disabled",
+                    text = stringResource(R.string.bluetooth_disabled_title),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                     fontWeight = FontWeight.Medium
                 )
             }
             Text(
-                text = "Please enable Bluetooth to scan for devices.",
+                text = stringResource(R.string.bluetooth_disabled_message),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
@@ -67,7 +69,7 @@ fun BluetoothWarningCard() {
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Open Bluetooth Settings")
+                Text(stringResource(R.string.open_bluetooth_settings))
             }
         }
     }
@@ -101,14 +103,14 @@ fun LocationWarningCard() {
                     tint = MaterialTheme.colorScheme.onErrorContainer
                 )
                 Text(
-                    text = "Location services are disabled",
+                    text = stringResource(R.string.location_services_disabled_title),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                     fontWeight = FontWeight.Medium
                 )
             }
             Text(
-                text = "Please enable location services for GPS functionality.",
+                text = stringResource(R.string.location_services_disabled_message),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
@@ -118,7 +120,7 @@ fun LocationWarningCard() {
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Open Location Settings")
+                Text(stringResource(R.string.open_location_settings))
             }
         }
     }

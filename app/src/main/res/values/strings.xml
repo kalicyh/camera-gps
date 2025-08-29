@@ -18,7 +18,7 @@
     <string name="step2_grant">Grant Background Location</string>
     <string name="step2_granted">&#10003; Granted</string>
     <string name="view_logs">View logs</string>
-    <string name="camera_gps_permissions">Camera GPS Permissions</string>
+    <string name="camera_gps_permissions">Alpha GPS Permissions</string>
 
     <!-- Permission request strings -->
     <string name="sample_requires_permissions">Sample requires permission/s:</string>
@@ -49,6 +49,14 @@
     <string name="permissions_required_app_error">%s is required for the app to function</string>
     <string name="background_location_required_error">Background location access required for continuous GPS sync when app is not in foreground</string>
     <string name="remove">Remove</string>
+
+    <!-- System state warnings -->
+    <string name="bluetooth_disabled_title">Bluetooth is disabled</string>
+    <string name="bluetooth_disabled_message">Please enable Bluetooth to scan for devices.</string>
+    <string name="open_bluetooth_settings">Open Bluetooth Settings</string>
+    <string name="location_services_disabled_title">Location services are disabled</string>
+    <string name="location_services_disabled_message">Please enable location services for GPS functionality.</string>
+    <string name="open_location_settings">Open Location Settings</string>
 
     <!-- Welcome screen strings -->
     <string name="welcome_title">Welcome to Alpha GPS</string>
@@ -149,5 +157,6 @@
     <string name="_3_make_sure_the_camera_is_discoverable">3. Make sure the camera is discoverable</string>
     <string name="once_your_camera_is_ready_tap_continue_to_start_pairing">\nOnce your camera is ready, tap \'Continue\' to start pairing.</string>
     <string name="android_12_requires_keep_alive">Devices running Android 11 and below must enable keepalive mode. Tap the device and enable the setting</string>
+    <string name="always_on_description">Runs the app in the foreground. Useful if the connection cannot be established reliably on devices with aggressive battery saving measures (e.g. Xiaomi and probably more)</string>
 
 </resources>

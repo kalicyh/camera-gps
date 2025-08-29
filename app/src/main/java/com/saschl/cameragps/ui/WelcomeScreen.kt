@@ -31,7 +31,7 @@ import com.saschl.cameragps.R
 fun WelcomeScreen(
     onGetStarted: () -> Unit
 ) {
-    Scaffold {
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -49,7 +49,8 @@ fun WelcomeScreen(
             text = stringResource(R.string.welcome_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -111,7 +112,6 @@ fun WelcomeScreen(
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
         )
-    }
     }
 }
 

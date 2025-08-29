@@ -17,7 +17,7 @@
     <string name="step2_grant">Erlaube Standortzugriff im Hintergrund.</string>
     <string name="step2_granted">&#10003; Freigegeben</string>
     <string name="view_logs">Zeige Logs</string>
-    <string name="camera_gps_permissions">Camera GPS Berechtigungen</string>
+    <string name="camera_gps_permissions">Alpha GPS Berechtigungen</string>
     <string name="continue_button">Weiter</string>
     <string name="dismiss_button">Beenden</string>
     <string name="cancel_button">Abbrechen</string>
@@ -35,6 +35,15 @@
     <string name="background_location_instruction">Bitte im nächsten Dialog \"Immer erlauben\" auswählen</string>
     <string name="background_location_access_message">Standortzugriff im Hintergrund ermöglicht:</string>
     <string name="remove">Entfernen</string>
+
+    <!-- System state warnings -->
+    <string name="bluetooth_disabled_title">Bluetooth ist deaktiviert</string>
+    <string name="bluetooth_disabled_message">Bitte aktiviere Bluetooth, um nach Geräten zu suchen.</string>
+    <string name="open_bluetooth_settings">Bluetooth-Einstellungen öffnen</string>
+    <string name="location_services_disabled_title">Standortdienste sind deaktiviert</string>
+    <string name="location_services_disabled_message">Bitte aktiviere die Standortdienste für GPS-Funktionalität.</string>
+    <string name="open_location_settings">Standort-Einstellungen öffnen</string>
+
     <string name="not_paired_tap_to_pair_again">Nicht gekoppelt. Bitte das Gerät erneut in den Bluetooth Einstellungen koppeln</string>
     <string name="to_pair_with_your_camera_please">Um die Kamera \'%1$s\' zu koppeln, bitte:</string>
     <string name="_1_turn_on_your_camera">1. Schalte die Kamera ein</string>
@@ -49,33 +58,6 @@
 
     <string name="welcome_title">Willkommen bei Alpha GPS</string>
     <string name="welcome_subtitle">GPS-Koordinaten in Echtzeit für Ihre Kamera über Bluetooth</string>
-    <string name="welcome_feature_connect_title">Kamera verbinden</string>
-    <string name="welcome_feature_connect_description">Koppeln Sie Ihre Sony Kamera mit Ihrem Telefon über Bluetooth für nahtlose GPS-Datenübertragung</string>
-    <string name="welcome_feature_gps_sync_title">Echtzeit GPS-Synchronisation</string>
-    <string name="welcome_feature_gps_sync_description">Synchronisieren Sie automatisch die GPS-Koordinaten Ihres Telefons mit Ihrer Kamera für präzises Geotagging</string>
-    <string name="welcome_feature_device_management_title">Geräteverwaltung</string>
-    <string name="welcome_feature_device_management_description">Verwalten Sie mehrere Kamerageräte und steuern Sie GPS-Synchronisationseinstellungen einfach</string>
-    <string name="welcome_get_started_button">Loslegen</string>
-    <string name="welcome_settings_note">Sie können diese Einstellungen später über das Hauptmenü aufrufen</string>
-
-    <!-- Settings screen strings -->
-    <string name="settings">Einstellungen</string>
-    <string name="app_controls">App-Steuerung</string>
-    <string name="enable_app">App aktivieren</string>
-    <string name="enable_app_description">Erlauben Sie der App zu laufen und GPS-Daten mit verbundenen Kameras zu synchronisieren</string>
-
-    <!-- Battery optimization dialog strings -->
-    <string name="battery_optimization_title">Akkuoptimierung</string>
-    <string name="battery_optimization_message">Um eine zuverlässige GPS-Synchronisation mit Ihrer Kamera zu gewährleisten, deaktivieren Sie bitte die Akkuoptimierung für diese App. Dies verhindert, dass das System die Hintergrundaktivität einschränkt.</string>
-    <string name="battery_optimization_proceed">Einstellungen öffnen</string>
-    <string name="battery_optimization_cancel">Abbrechen</string>
-    <string name="battery_optimization_dont_show">Nicht mehr anzeigen</string>
-
-    <!-- Xiaomi-specific battery optimization strings -->
-    <string name="battery_optimization_xiaomi_title">Xiaomi Akkuoptimierung</string>
-    <string name="battery_optimization_xiaomi_message">Xiaomi-Geräte erfordern zusätzliche Schritte, um sicherzustellen, dass die App zuverlässig im Hintergrund funktioniert:\n\n1. Akkuoptimierung-Einstellungen öffnen\n2. Diese App auf "Nicht optimieren" setzen\n3. Gehen Sie zu Einstellungen > Apps > Apps verwalten\n4. Finden Sie diese App und aktivieren Sie "Autostart"\n5. Setzen Sie "Hintergrund-App-Limits" auf "Keine Einschränkungen"</string>
-    <string name="battery_optimization_xiaomi_autostart">Autostart-Einstellungen öffnen</string>
-    <string name="battery_optimization_xiaomi_battery">Akku-Einstellungen öffnen</string>
 
     <!-- Help & FAQ strings -->
     <string name="help_faq_title">Hilfe &amp; FAQ</string>
@@ -108,7 +90,7 @@
     <string name="faq_disconnects_answer">Versuchen Sie diese Lösungen:\n• Halten Sie Ihr Telefon näher zur Kamera\n• Deaktivieren Sie die Akkuoptimierung für die App\n• Überprüfen Sie, ob Ihre Kamera Energiesparmodi hat, die Bluetooth beeinträchtigen\n• Starten Sie beide Geräte neu und koppeln Sie sie bei Bedarf erneut</string>
 
     <string name="faq_camera_not_connecting_question">Meine Kamera verbindet sich nicht automatisch, was kann ich tun?</string>
-    <string name="faq_camera_not_connecting_answer">Leider kann es Situationen geben, in denen die automatische Verbindung nicht funktioniert. Wenn Sie Probleme haben, gehen Sie bitte wie folgt vor: Tippen Sie auf dem Hauptbildschirm auf Ihre Kamera, um den Detailbildschirm zu öffnen. Dort haben Sie die Möglichkeit, den "Dauerbetrieb"-Modus zu aktivieren, der die App im Vordergrund hält</string>
+    <string name="faq_camera_not_connecting_answer">Leider kann es vorkommen, dass die automatische Verbindung nicht funktioniert. Falls Sie Probleme haben, gehen Sie bitte wie folgt vor: Tippen Sie auf dem Hauptbildschirm auf Ihre Kamera, um die Detailansicht zu öffnen. Dort haben Sie die Möglichkeit, den "Immer aktiv"-Modus zu aktivieren, der die App im Vordergrund hält</string>
 
     <!-- Help menu item -->
     <string name="help_menu_item">Hilfe</string>
@@ -132,5 +114,6 @@
     <!-- Device limitation hint -->
     <string name="single_device_limitation_hint">Derzeit wird nur eine Kamera gleichzeitig unterstützt. Unterstützung für mehrere Geräte wird in einem zukünftigen Update hinzugefügt.</string>
     <string name="android_12_requires_keep_alive">Smartphones mit Android 11 oder niedriger müssen den "Immer An" Modus aktivieren. Tippen sie auf die Kamera und aktivieren sie die Einstellung</string>
+    <string name="always_on_description">Lässt die App im Vordergrund laufen. Nützliich, wenn die Verbindung nicht verlässlich automatisch hergestellt werden kann (z.B. durch aggressive Batteriesparmaßen bei Xiaomi Geräten und möglicherweise weiteren)</string>
 
 </resources>

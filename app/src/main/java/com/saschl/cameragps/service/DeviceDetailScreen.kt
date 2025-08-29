@@ -59,12 +59,10 @@ fun DeviceDetailScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    // Track device enabled state
     var isDeviceEnabled by remember {
         mutableStateOf(PreferencesManager.isDeviceEnabled(context, device.address))
     }
 
-    // Track device enabled state
     var keepAlive by remember {
         mutableStateOf(PreferencesManager.isKeepAliveEnabled(context, device.address))
     }
@@ -122,7 +120,6 @@ fun DeviceDetailScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Device info section
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -153,14 +150,12 @@ fun DeviceDetailScreen(
                 }
             }
 
-            // Settings section - full width
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Device toggle switch
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -222,9 +217,8 @@ fun DeviceDetailScreen(
                     )
                 }
 
-                // Description for keepAlive setting - smaller and more connected
                 Text(
-                    text = "Alternative approach for devices with aggressive battery optimizations (e.g., Xiaomi).\n\nKeeps the service running constantly instead of relying on device presence detection.",
+                    text = stringResource(R.string.always_on_description),
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = MaterialTheme.typography.labelSmall.fontSize),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 8.dp, top = 4.dp, bottom = 8.dp),

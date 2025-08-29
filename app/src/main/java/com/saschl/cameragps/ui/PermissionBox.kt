@@ -318,6 +318,7 @@ private fun EnhancedPermissionScreen(
             text = stringResource(R.string.camera_gps_permissions),
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(bottom = 16.dp),
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         // Step 1: Foreground Location Permissions

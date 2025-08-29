@@ -119,12 +119,11 @@ fun ScanForDevicesMenu(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Bluetooth warning card
+
         if (!isBluetoothEnabled) {
             BluetoothWarningCard()
         }
 
-        // Location services warning card
         if (!isLocationEnabled) {
             LocationWarningCard()
         }
