@@ -1,14 +1,17 @@
 package com.saschl.cameragps.service
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.companion.CompanionDeviceManager
 import android.companion.ObservingDevicePresenceRequest
 import android.content.Intent
+import android.content.IntentFilter
 import android.location.LocationManager
 import android.os.Build
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -17,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -57,6 +61,25 @@ fun CameraDeviceManager(
         mutableStateOf(locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true ||
                       locationManager?.isProviderEnabled(LocationManager.NETWORK_PROVIDER) == true)
     }
+
+    DisposableEffect(context) {
+        val bluetoothReceiver = BluetoothStateBroadcastReceiver { enabled ->
+            isBluetoothEnabled = enabled
+        }
+
+        val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+        ContextCompat.registerReceiver(
+            context.applicationContext,
+            bluetoothReceiver,
+            filter,
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+
+        onDispose {
+            context.applicationContext.unregisterReceiver(bluetoothReceiver)
+        }
+    }
+
 
     LaunchedEffect(lifecycleState) {
         when (lifecycleState) {
