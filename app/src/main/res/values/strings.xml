@@ -138,7 +138,7 @@
 
     <!-- Battery optimization dialog strings -->
     <string name="battery_optimization_title">Battery Optimization</string>
-    <string name="battery_optimization_message">To ensure reliable GPS sync with your camera, please disable battery optimization for this app. This prevents the system from limiting background activity.</string>
+    <string name="battery_optimization_message">To ensure reliable GPS sync with your camera, please disable battery optimization for this app. This prevents the system from limiting background activity. You can also choose to ignore this dialog and the app may function just as fine. This heavily depends on the device manufacturer and Android version</string>
     <string name="battery_optimization_proceed">Open Settings</string>
     <string name="battery_optimization_cancel">Cancel</string>
     <string name="battery_optimization_dont_show">Don\'t show again</string>

@@ -23,7 +23,7 @@
     <string name="cancel_button">Abbrechen</string>
     <string name="app_settings">App Einstellungen</string>
     <string name="location_bluetooth_access_title">Standort &amp; Bluetooth Zugriff benötigt</string>
-    <string name="location_bluetooth_access_message">Diese App braucht Zugriff auf Standortdaten und Bluetooth um: • Connect to your Sony camera via Bluetooth • Standortzugriff zur Übertragung an die Kamera • Provide accurate location data for your photos</string>
+    <string name="location_bluetooth_access_message">Diese App braucht Zugriff auf Standortdaten und Bluetooth um: • Eine Verbindung zur Kamera herzustellen • Standortzugriff zur Übertragung an die Kamera</string>
     <string name="location_bluetooth_benefit_3">• Stell akkurate Standortdaten zur Verfügung</string>
     <string name="grant_permissions_button">Berechtigungen erteilen</string>
     <string name="background_location_access_title">Standortzugriff im Hintergrund</string>
@@ -115,5 +115,19 @@
     <string name="single_device_limitation_hint">Derzeit wird nur eine Kamera gleichzeitig unterstützt. Unterstützung für mehrere Geräte wird in einem zukünftigen Update hinzugefügt.</string>
     <string name="android_12_requires_keep_alive">Smartphones mit Android 11 oder niedriger müssen den "Immer An" Modus aktivieren. Tippen sie auf die Kamera und aktivieren sie die Einstellung</string>
     <string name="always_on_description">Lässt die App im Vordergrund laufen. Nützliich, wenn die Verbindung nicht verlässlich automatisch hergestellt werden kann (z.B. durch aggressive Batteriesparmaßen bei Xiaomi Geräten und möglicherweise weiteren)</string>
+
+    <!-- Battery optimization dialog strings -->
+    <string name="battery_optimization_title">Akkuoptimierung</string>
+    <string name="battery_optimization_message">Um eine zuverlässige GPS-Synchronisierung mit Ihrer Kamera sicherzustellen, deaktivieren Sie bitte die Akkuoptimierung für diese App. Dadurch wird verhindert, dass das System die Hintergrundaktivität einschränkt. Sie können diesen Dialog auch ignorieren und die App kann trotzdem funktionieren. Dies hängt jedoch stark vom Gerätehersteller und der Android-Version ab.</string>
+    <string name="battery_optimization_proceed">Einstellungen öffnen</string>
+    <string name="battery_optimization_cancel">Abbrechen</string>
+    <string name="battery_optimization_dont_show">Nicht mehr anzeigen</string>
+
+    <!-- Xiaomi-specific battery optimization strings -->
+    <string name="battery_optimization_xiaomi_title">Xiaomi Akkuoptimierung</string>
+    <string name="battery_optimization_xiaomi_message">Auf Xiaomi-Geräten sind zusätzliche Schritte nötig, damit die App im Hintergrund zuverlässig funktioniert:\n\n1. Akkuoptimierung öffnen\n2. Diese App auf "Nicht optimieren" setzen\n3. Zu Einstellungen &gt; Apps &gt; Apps verwalten gehen\n4. Diese App finden und "Autostart" aktivieren\n5. "Hintergrund-App-Limits" auf "Keine Einschränkungen" stellen</string>
+    <string name="battery_optimization_xiaomi_autostart">Autostart-Einstellungen öffnen</string>
+    <string name="battery_optimization_xiaomi_battery">Akku-Einstellungen öffnen</string>
+
 
 </resources>
