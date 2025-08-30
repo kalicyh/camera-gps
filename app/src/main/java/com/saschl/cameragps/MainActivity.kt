@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -14,6 +15,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.getSystemService
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.saschl.cameragps.service.CameraDeviceManager
 import com.saschl.cameragps.service.FileTree
 import com.saschl.cameragps.service.GlobalExceptionHandler
@@ -53,6 +56,23 @@ class MainActivity : ComponentActivity() {
         val context = LocalContext.current
         var showWelcome by remember { mutableStateOf(PreferencesManager.isFirstLaunch(context)) }
         var showSettings by remember { mutableStateOf(false) }
+
+        val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsState()
+
+        LaunchedEffect(lifecycleState) {
+            when (lifecycleState) {
+                Lifecycle.State.RESUMED -> {
+                    showWelcome = PreferencesManager.isFirstLaunch(context)
+                    if (showWelcome) {
+                        showSettings = false
+                    }
+                }
+
+                else -> { /* No action needed */
+                }
+            }
+        }
+
 
         // Check if battery optimization dialog should be shown
         val powerManager = context.getSystemService<PowerManager>()

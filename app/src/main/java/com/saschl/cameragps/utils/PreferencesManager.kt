@@ -26,6 +26,11 @@ object PreferencesManager {
             putBoolean(KEY_FIRST_LAUNCH, false)
         }
     }
+    fun showFirstLaunch(context: Context) {
+        getPreferences(context).edit {
+            putBoolean(KEY_FIRST_LAUNCH, true)
+        }
+    }
 
     fun isAppEnabled(context: Context): Boolean {
         return getPreferences(context).getBoolean(KEY_APP_ENABLED, true)

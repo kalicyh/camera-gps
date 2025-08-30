@@ -129,5 +129,12 @@
     <string name="battery_optimization_xiaomi_autostart">Autostart-Einstellungen öffnen</string>
     <string name="battery_optimization_xiaomi_battery">Akku-Einstellungen öffnen</string>
 
+    <string name="quick_start_feature_title">Schnellstart</string>
+    <string name="quick_start_feature_description">Folgen Sie den Anweisungen auf dem nächsten Bildschirm, um Ihre Kamera zu koppeln. Nach Abschluss der Kopplung verbindet sich die App automatisch mit Ihrer Kamera und beginnt mit der Übertragung der Standortdaten. Falls dies nicht geschieht, starten Sie Ihre Kamera neu.</string>
+    <string name="always_on_quickstart">Always-on Modus</string>
+    <string name="always_on_quickstart_description">Falls der Standardverbindungsmodus nicht funktioniert, können Sie nach der Kopplung den Always-on Modus aktivieren. Tippen Sie auf den Geräteeintrag auf dem Hauptbildschirm und schalten Sie die Option ein. Dieser Modus kann mehr Akku verbrauchen, überträgt die Standortdaten jedoch nur, wenn die Kamera verbunden ist um unnötigen Akkuverbrauchzu reduzieren.</string>
+    <string name="reset_welcome">Willkommensbildschirm beim nächsten Start anzeigen</string>
+    <string name="will_show_welcome">Willkommensbildschirm wird beim nächsten Start angezeigt!</string>
+
 
 </resources>

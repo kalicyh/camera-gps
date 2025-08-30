@@ -15,9 +15,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -32,6 +35,8 @@ fun WelcomeScreen(
     onGetStarted: () -> Unit
 ) {
 
+    var step1 by remember { mutableStateOf(true) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -40,7 +45,6 @@ fun WelcomeScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -65,54 +69,86 @@ fun WelcomeScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Feature cards
-        FeatureCard(
-            title = stringResource(R.string.welcome_feature_connect_title),
-            description = stringResource(R.string.welcome_feature_connect_description),
-            icon = R.drawable.baseline_photo_camera_24
-        )
+        if (!step1) {
+            FeatureCard(
+                title = stringResource(R.string.quick_start_feature_title),
+                description = stringResource(R.string.quick_start_feature_description),
+                icon = R.drawable.baseline_photo_camera_24
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            FeatureCard(
+                title = stringResource(R.string.always_on_quickstart),
+                description = stringResource(R.string.always_on_quickstart_description),
+                icon = R.drawable.baseline_photo_camera_24
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-        FeatureCard(
-            title = stringResource(R.string.welcome_feature_gps_sync_title),
-            description = stringResource(R.string.welcome_feature_gps_sync_description),
-            icon = R.drawable.baseline_photo_camera_24
-        )
+            Button(
+                onClick = onGetStarted,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.welcome_get_started_button),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium
+                )
+            }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        }
 
-        FeatureCard(
-            title = stringResource(R.string.welcome_feature_device_management_title),
-            description = stringResource(R.string.welcome_feature_device_management_description),
-            icon = R.drawable.baseline_photo_camera_24
-        )
+        if (step1) {
+            FeatureCard(
+                title = stringResource(R.string.welcome_feature_connect_title),
+                description = stringResource(R.string.welcome_feature_connect_description),
+                icon = R.drawable.baseline_photo_camera_24
+            )
 
-        Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Get Started button
-        Button(
-            onClick = onGetStarted,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-        ) {
+            FeatureCard(
+                title = stringResource(R.string.welcome_feature_gps_sync_title),
+                description = stringResource(R.string.welcome_feature_gps_sync_description),
+                icon = R.drawable.baseline_photo_camera_24
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            FeatureCard(
+                title = stringResource(R.string.welcome_feature_device_management_title),
+                description = stringResource(R.string.welcome_feature_device_management_description),
+                icon = R.drawable.baseline_photo_camera_24
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Button(
+                onClick = { step1 = false },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.welcome_get_started_button),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Text(
-                text = stringResource(R.string.welcome_get_started_button),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium
+                text = stringResource(R.string.welcome_settings_note),
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = stringResource(R.string.welcome_settings_note),
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-        )
     }
+
 }
 
 @Composable

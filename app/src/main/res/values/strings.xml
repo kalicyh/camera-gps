@@ -158,5 +158,11 @@
     <string name="once_your_camera_is_ready_tap_continue_to_start_pairing">\nOnce your camera is ready, tap \'Continue\' to start pairing.</string>
     <string name="android_12_requires_keep_alive">Devices running Android 11 and below must enable keepalive mode. Tap the device and enable the setting</string>
     <string name="always_on_description">Runs the app in the foreground. Useful if the connection cannot be established reliably on devices with aggressive battery saving measures (e.g. Xiaomi and probably more)</string>
+    <string name="quick_start_feature_title">Quickstart</string>
+    <string name="quick_start_feature_description">On the next screen, follow the instructions to pair your camera. Once pairing is complete, the app will automatically connect to your camera and start transmitting location data. If it does not start immediately, try restarting your camera.</string>
+    <string name="always_on_quickstart">Always on mode</string>
+    <string name="always_on_quickstart_description">If the default connection mode does not work, you can enable Always On mode after pairing your device. Tap the device entry on the main screen and turn on the toggle. This mode may use more battery, but only transmits location data when connected to the camera.</string>
+    <string name="reset_welcome">Show welcome screen on next launch</string>
+    <string name="will_show_welcome">Will show welcome screen on next launch!</string>
 
 </resources>
