@@ -164,5 +164,7 @@
     <string name="always_on_quickstart_description">If the default connection mode does not work, you can enable Always On mode after pairing your device. Tap the device entry on the main screen and turn on the toggle. This mode may use more battery, but only transmits location data when connected to the camera.</string>
     <string name="reset_welcome">Show welcome screen on next launch</string>
     <string name="will_show_welcome">Will show welcome screen on next launch!</string>
+    <string name="is_there_documenation">Is there any documentation?</string>
+    <string name="is_there_documenation_answer">Yes! Please visit the Github page \nYou can also report issues with the App there:\n</string>
 
 </resources>

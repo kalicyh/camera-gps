@@ -5,24 +5,50 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowCompat
 import com.saschl.cameragps.R
 import com.saschl.cameragps.ui.theme.CameraGpsTheme
 
 data class FaqItem(
     val questionRes: Int,
-    val answerRes: Int
+    val answerRes: Int,
+    val containsLink: Boolean = false
 )
 
 class HelpActivity : ComponentActivity() {
@@ -46,6 +72,11 @@ fun HelpScreen(
     onBackClick: () -> Unit
 ) {
     val faqItems = listOf(
+        FaqItem(
+            questionRes = R.string.is_there_documenation,
+            answerRes = R.string.is_there_documenation_answer,
+            containsLink = true
+        ),
         FaqItem(
             questionRes = R.string.faq_connect_camera_question,
             answerRes = R.string.faq_connect_camera_answer
@@ -162,11 +193,33 @@ fun HelpScreen(
 
                         if (expanded) {
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = stringResource(faq.answerRes),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            if (faq.containsLink) {
+                                Text(
+                                    buildAnnotatedString {
+                                        append(stringResource(faq.answerRes))
+                                        withLink(
+                                            LinkAnnotation.Url(
+                                                "https://github.com/Saschl/camera-gps/blob/main/README.md",
+                                                TextLinkStyles(
+                                                    style = SpanStyle(
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        textDecoration = TextDecoration.Underline
+                                                    )
+                                                )
+                                            )
+                                        ) {
+                                            append("https://github.com/Saschl/camera-gps/blob/main/README.md")
+                                        }
+                                    }
+                                )
+                            } else {
+                                Text(
+                                    text = stringResource(faq.answerRes),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
                         }
                     }
                 }

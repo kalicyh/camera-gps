@@ -135,6 +135,8 @@
     <string name="always_on_quickstart_description">Falls der Standardverbindungsmodus nicht funktioniert, können Sie nach der Kopplung den Always-on Modus aktivieren. Tippen Sie auf den Geräteeintrag auf dem Hauptbildschirm und schalten Sie die Option ein. Dieser Modus kann mehr Akku verbrauchen, überträgt die Standortdaten jedoch nur, wenn die Kamera verbunden ist um unnötigen Akkuverbrauchzu reduzieren.</string>
     <string name="reset_welcome">Willkommensbildschirm beim nächsten Start anzeigen</string>
     <string name="will_show_welcome">Willkommensbildschirm wird beim nächsten Start angezeigt!</string>
+    <string name="is_there_documenation">Gibt es irgendwo eine Dokumentation?</string>
+    <string name="is_there_documenation_answer">Ja! Bitte besuchen sie die GitHub Seite. \nDort können sie auch Probleme/Bugs mit der Anwendung melden:\n</string>
 
 
 </resources>
