@@ -10,7 +10,13 @@ I also only have access to an Alpha 6400, but it should probably work with most 
 
 
 ## How to install?
-- Get the APK from the releases and install it directly on your phone. Or use Obtainium and enter the repo URL for a more seamless experience.
+
+
+<a href="https://play.google.com/store/apps/details?id=com.saschl.cameragps"><img width="270" height="80" alt="GetItOnGooglePlay_Badge_Web_color_English" src="https://github.com/user-attachments/assets/775cb6fc-a297-4208-9249-43291c52d045" /></a>
+
+OR
+
+ Get the APK from the releases and install it directly on your phone. Or use Obtainium and enter the repo URL for a more seamless experience.
   
 
 ## How does it work?
