@@ -56,7 +56,7 @@
         </activity>
 
         <service
-            android:name="com.saschl.cameragps.service.CompanionDeviceSampleService"
+            android:name="com.saschl.cameragps.service.CameraDeviceCompanionService"
             android:exported="true"
             android:permission="android.permission.BIND_COMPANION_DEVICE_SERVICE"
             tools:targetApi="31">

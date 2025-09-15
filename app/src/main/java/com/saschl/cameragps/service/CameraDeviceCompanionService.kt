@@ -20,7 +20,7 @@ import java.util.Locale
 
 
 @RequiresApi(Build.VERSION_CODES.S)
-class CompanionDeviceSampleService : CompanionDeviceService() {
+class CameraDeviceCompanionService : CompanionDeviceService() {
 
     private fun startLocationSenderService(address: String?) {
         if (PreferencesManager.isAppEnabled(this)) {
@@ -69,7 +69,7 @@ class CompanionDeviceSampleService : CompanionDeviceService() {
     override fun onDevicePresenceEvent(event: DevicePresenceEvent) {
         super.onDevicePresenceEvent(event)
         if (missingPermissions()) {
-            Timber.e(CompanionDeviceSampleService::class.java.toString(), "Missing permissions")
+            Timber.e(CameraDeviceCompanionService::class.java.toString(), "Missing permissions")
             return
         }
 
