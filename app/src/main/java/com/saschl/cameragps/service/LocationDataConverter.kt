@@ -1,10 +1,8 @@
 package com.saschl.cameragps.service
 
 import android.location.Location
-import com.google.android.gms.location.LocationResult
 import java.nio.ByteBuffer
 import java.time.Instant
-import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
@@ -48,8 +46,7 @@ object LocationDataConverter {
      * Converts timezone offset to byte array format
      */
     fun convertTimeZoneOffset(timezoneId: ZoneId): ByteArray {
-        val dt = LocalDateTime.now()
-        val offsetMin = timezoneId.rules.getOffset(dt).totalSeconds / 60
+        val offsetMin = timezoneId.rules.getStandardOffset(Instant.now()).totalSeconds / 60
         return offsetMin.toShort().toByteArray()
     }
 
@@ -74,14 +71,17 @@ object LocationDataConverter {
     /**
      * Builds the complete location data packet to send to the camera
      */
-    public fun buildLocationDataPacket(locationDataConfig: LocationDataConfig, locationResult: Location): ByteArray {
+    fun buildLocationDataPacket(
+        locationDataConfig: LocationDataConfig,
+        locationResult: Location
+    ): ByteArray {
         val timeZoneId = locationDataConfig.timeZoneId
         val paddingBytes = ByteArray(65)
 
-        val locationBytes = LocationDataConverter.convertCoordinates(locationResult)
-        val dateBytes = LocationDataConverter.convertDate()
-        val timeZoneOffsetBytes = LocationDataConverter.convertTimeZoneOffset(timeZoneId)
-        val dstOffsetBytes = LocationDataConverter.convertDstOffset(timeZoneId)
+        val locationBytes = convertCoordinates(locationResult)
+        val dateBytes = convertDate()
+        val timeZoneOffsetBytes = convertTimeZoneOffset(timeZoneId)
+        val dstOffsetBytes = convertDstOffset(timeZoneId)
 
         val data = ByteArray(locationDataConfig.dataSize)
         var currentPosition = 0

@@ -138,5 +138,6 @@
     <string name="is_there_documenation">Gibt es irgendwo eine Dokumentation?</string>
     <string name="is_there_documenation_answer">Ja! Bitte besuchen sie die GitHub Seite. \nDort können sie auch Probleme/Bugs mit der Anwendung melden:\n</string>
 
-
+    <string name="app_standby_title">Standby</string>
+    <string name="app_standby_content">Warten auf Kameraverbindung</string>
 </resources>
