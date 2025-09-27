@@ -24,6 +24,7 @@ import com.saschl.cameragps.ui.BatteryOptimizationDialog
 import com.saschl.cameragps.ui.SettingsScreen
 import com.saschl.cameragps.ui.WelcomeScreen
 import com.saschl.cameragps.ui.theme.CameraGpsTheme
+import com.saschl.cameragps.utils.LanguageManager
 import com.saschl.cameragps.utils.PreferencesManager
 import timber.log.Timber
 
@@ -32,6 +33,9 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        // Apply saved language setting
+        LanguageManager.applyLanguage(this)
 
 
         if (Timber.treeCount == 0) {

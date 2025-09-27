@@ -3,14 +3,18 @@ package com.saschl.cameragps.ui
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -20,9 +24,12 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.saschl.cameragps.R
 import com.saschl.cameragps.service.LocationSenderService
+import com.saschl.cameragps.utils.LanguageManager
 import com.saschl.cameragps.utils.PreferencesManager
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,6 +56,9 @@ fun SettingsScreen(
     var isAppEnabled by remember {
         mutableStateOf(PreferencesManager.isAppEnabled(context))
     }
+    
+    val currentLanguage = LanguageManager.getCurrentLanguage(context)
+    var showLanguageDialog by remember { mutableStateOf(false) }
 
     Scaffold(
 
@@ -166,6 +177,132 @@ fun SettingsScreen(
                     }
                 }
             }
+            
+            // Language Settings Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.language_settings),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+                    
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showLanguageDialog = true },
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.language_selection),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = when (currentLanguage) {
+                                        LanguageManager.Language.SYSTEM -> stringResource(R.string.language_system)
+                                        LanguageManager.Language.ENGLISH -> stringResource(R.string.language_english)
+                                        LanguageManager.Language.GERMAN -> stringResource(R.string.language_german)
+                                        LanguageManager.Language.CHINESE_SIMPLIFIED -> stringResource(R.string.language_chinese)
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Language Selection Dialog
+        if (showLanguageDialog) {
+            LanguageSelectionDialog(
+                currentLanguage = currentLanguage,
+                onLanguageSelected = { language ->
+                    val activity = context as? androidx.activity.ComponentActivity
+                    activity?.let {
+                        LanguageManager.applyLanguageToActivity(
+                            it, 
+                            if (language == LanguageManager.Language.SYSTEM) null else language.code
+                        )
+                    }
+                    showLanguageDialog = false
+                },
+                onDismiss = { showLanguageDialog = false }
+            )
         }
     }
+}
+
+@Composable
+private fun LanguageSelectionDialog(
+    currentLanguage: LanguageManager.Language,
+    onLanguageSelected: (LanguageManager.Language) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(R.string.language_selection),
+                style = MaterialTheme.typography.headlineSmall
+            )
+        },
+        text = {
+            Column {
+                LanguageManager.getAvailableLanguages().forEach { language ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onLanguageSelected(language) }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = language == currentLanguage,
+                            onClick = { onLanguageSelected(language) }
+                        )
+                        Text(
+                            text = when (language) {
+                                LanguageManager.Language.SYSTEM -> stringResource(R.string.language_system)
+                                LanguageManager.Language.ENGLISH -> stringResource(R.string.language_english)
+                                LanguageManager.Language.GERMAN -> stringResource(R.string.language_german)
+                                LanguageManager.Language.CHINESE_SIMPLIFIED -> stringResource(R.string.language_chinese)
+                            },
+                            modifier = Modifier.padding(start = 8.dp),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel_button))
+            }
+        }
+    )
 }
