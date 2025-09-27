@@ -1,5 +1,6 @@
 package com.saschl.cameragps.ui
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -44,6 +45,7 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import com.saschl.cameragps.R
 import com.saschl.cameragps.ui.theme.CameraGpsTheme
+import com.saschl.cameragps.utils.LanguageContextWrapper
 
 data class FaqItem(
     val questionRes: Int,
@@ -52,6 +54,11 @@ data class FaqItem(
 )
 
 class HelpActivity : ComponentActivity() {
+    
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(LanguageContextWrapper.wrap(newBase ?: return))
+    }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

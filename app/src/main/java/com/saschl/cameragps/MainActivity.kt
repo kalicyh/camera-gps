@@ -1,5 +1,6 @@
 package com.saschl.cameragps
 
+import android.content.Context
 import android.os.Bundle
 import android.os.PowerManager
 import androidx.activity.ComponentActivity
@@ -24,18 +25,21 @@ import com.saschl.cameragps.ui.BatteryOptimizationDialog
 import com.saschl.cameragps.ui.SettingsScreen
 import com.saschl.cameragps.ui.WelcomeScreen
 import com.saschl.cameragps.ui.theme.CameraGpsTheme
+import com.saschl.cameragps.utils.LanguageContextWrapper
 import com.saschl.cameragps.utils.LanguageManager
 import com.saschl.cameragps.utils.PreferencesManager
 import timber.log.Timber
 
 class MainActivity : ComponentActivity() {
+    
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(LanguageContextWrapper.wrap(newBase ?: return))
+    }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-
-        // Apply saved language setting
-        LanguageManager.applyLanguage(this)
 
 
         if (Timber.treeCount == 0) {

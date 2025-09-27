@@ -1,5 +1,6 @@
 package com.saschl.cameragps.ui
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -42,12 +43,18 @@ import androidx.compose.ui.unit.sp
 import com.saschl.cameragps.R
 import com.saschl.cameragps.service.FileTree
 import com.saschl.cameragps.ui.theme.CameraGpsTheme
+import com.saschl.cameragps.utils.LanguageContextWrapper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.collections.isNotEmpty
 import kotlin.collections.joinToString
 
 class LogViewerActivity : ComponentActivity() {
+    
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(LanguageContextWrapper.wrap(newBase ?: return))
+    }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
