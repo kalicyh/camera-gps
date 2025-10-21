@@ -3,6 +3,7 @@ package com.saschl.cameragps.ui
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,10 +11,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -42,10 +44,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.os.LocaleListCompat
 import com.saschl.cameragps.R
 import com.saschl.cameragps.service.LocationSenderService
 import com.saschl.cameragps.utils.LanguageManager
 import com.saschl.cameragps.utils.PreferencesManager
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -221,12 +225,8 @@ fun SettingsScreen(
                                     fontWeight = FontWeight.Medium
                                 )
                                 Text(
-                                    text = when (currentLanguage) {
-                                        LanguageManager.Language.SYSTEM -> stringResource(R.string.language_system)
-                                        LanguageManager.Language.ENGLISH -> stringResource(R.string.language_english)
-                                        LanguageManager.Language.GERMAN -> stringResource(R.string.language_german)
-                                        LanguageManager.Language.CHINESE_SIMPLIFIED -> stringResource(R.string.language_chinese)
-                                    },
+                                    text = currentLanguage?.displayName
+                                        ?: "System Default (${Locale.getDefault().displayName})",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -241,12 +241,15 @@ fun SettingsScreen(
         if (showLanguageDialog) {
             LanguageSelectionDialog(
                 currentLanguage = currentLanguage,
+                onLanguageUnset = {
+                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
+                },
                 onLanguageSelected = { language ->
                     val activity = context as? androidx.activity.ComponentActivity
                     activity?.let {
                         LanguageManager.applyLanguageToActivity(
-                            it, 
-                            if (language == LanguageManager.Language.SYSTEM) null else language.code
+                            it,
+                            language
                         )
                     }
                     showLanguageDialog = false
@@ -259,8 +262,9 @@ fun SettingsScreen(
 
 @Composable
 private fun LanguageSelectionDialog(
-    currentLanguage: LanguageManager.Language,
-    onLanguageSelected: (LanguageManager.Language) -> Unit,
+    currentLanguage: Locale?,
+    onLanguageSelected: (Locale) -> Unit,
+    onLanguageUnset: () -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
@@ -272,8 +276,27 @@ private fun LanguageSelectionDialog(
             )
         },
         text = {
-            Column {
-                LanguageManager.getAvailableLanguages().forEach { language ->
+            LazyColumn {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onLanguageUnset() }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = currentLanguage == null,
+                            onClick = onLanguageUnset
+                        )
+                        Text(
+                            text = "System Default (${Locale.getDefault().displayName})",
+                            modifier = Modifier.padding(start = 8.dp),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+                items(LanguageManager.SupportedLanguage.getSupportedLocales()) { language ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -286,12 +309,7 @@ private fun LanguageSelectionDialog(
                             onClick = { onLanguageSelected(language) }
                         )
                         Text(
-                            text = when (language) {
-                                LanguageManager.Language.SYSTEM -> stringResource(R.string.language_system)
-                                LanguageManager.Language.ENGLISH -> stringResource(R.string.language_english)
-                                LanguageManager.Language.GERMAN -> stringResource(R.string.language_german)
-                                LanguageManager.Language.CHINESE_SIMPLIFIED -> stringResource(R.string.language_chinese)
-                            },
+                            text = language.displayName,
                             modifier = Modifier.padding(start = 8.dp),
                             style = MaterialTheme.typography.bodyLarge
                         )
